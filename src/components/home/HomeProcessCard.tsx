@@ -1,6 +1,6 @@
 import { rutaATexto } from "@/lib/hill-climbing";
 import { homeContent } from "@/lib/home-content";
-import { baseRun } from "@/lib/mock-data";
+import { corridaBase } from "@/lib/mock-data";
 import { SearchTreeView } from "@/components/graph/SearchTreeView";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,8 +25,8 @@ export function HomeProcessCard() {
               <article className="explain-item">
                 <h3>{homeContent.stepBlocks.one.title}</h3>
                 <p>
-                  {homeContent.stepBlocks.one.prefix} <code>{rutaATexto(baseRun.startRoute)}</code> con{" "}
-                  <code>F={baseRun.startCost}</code>.
+                  {homeContent.stepBlocks.one.prefix} <code>{rutaATexto(corridaBase.startRoute)}</code> con{" "}
+                  <code>F={corridaBase.startCost}</code>.
                 </p>
               </article>
               <article className="explain-item">
@@ -36,7 +36,7 @@ export function HomeProcessCard() {
               <article className="explain-item">
                 <h3>{homeContent.stepBlocks.three.title}</h3>
                 <p>
-                  {homeContent.stepBlocks.three.prefix} <code>{rutaATexto(baseRun.solutionRoute)}</code>{" "}
+                  {homeContent.stepBlocks.three.prefix} <code>{rutaATexto(corridaBase.solutionRoute)}</code>{" "}
                   {homeContent.stepBlocks.three.suffix}
                 </p>
               </article>
@@ -45,7 +45,7 @@ export function HomeProcessCard() {
 
           <TabsContent value="iterations">
             <div className="iteration-stack">
-              {baseRun.iterations.map((iteracion) => (
+              {corridaBase.iterations.map((iteracion) => (
                 <article key={iteracion.iteration} className="iteration-block">
                   <h3>
                     Iteración {iteracion.iteration}: {rutaATexto(iteracion.currentRoute)} (F={iteracion.currentCost})
@@ -67,7 +67,7 @@ export function HomeProcessCard() {
           </TabsContent>
 
           <TabsContent value="tree">
-            <SearchTreeView result={baseRun} />
+            <SearchTreeView result={corridaBase} />
           </TabsContent>
         </Tabs>
       </CardContent>
