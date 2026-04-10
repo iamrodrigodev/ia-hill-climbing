@@ -86,7 +86,6 @@ export function GraphCanvas({
         aria-label="Grafo interactivo"
         onClick={(evento) => {
           if (!onCanvasClick) return;
-          if (evento.target !== evento.currentTarget) return;
           const punto = convertirAPuntoSvg(evento.clientX, evento.clientY);
           if (punto) onCanvasClick(punto.x, punto.y);
         }}

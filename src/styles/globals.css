@@ -284,6 +284,22 @@ code {
   flex-wrap: wrap;
 }
 
+.mode-toolbar-extra {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mode-toolbar-extra .field-label {
+  margin-bottom: 0;
+}
+
+.mode-toolbar-extra .ui-input,
+.mode-toolbar-extra select {
+  min-width: 160px;
+}
+
 .source-line {
   margin-top: 0.2rem;
 }
@@ -884,10 +900,21 @@ code {
   flex-wrap: wrap;
 }
 
+.case-topbar > div:first-child {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.case-topbar > .stepper-controls,
+.case-topbar > div:last-child {
+  flex-shrink: 0;
+}
+
 .stepper-controls {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.45rem;
+  white-space: nowrap;
 }
 
 .step-badge {
@@ -898,6 +925,7 @@ code {
   font-size: 0.78rem;
   font-weight: 700;
   padding: 0.2rem 0.55rem;
+  white-space: nowrap;
 }
 
 .step-badge.tone-start {
