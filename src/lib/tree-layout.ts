@@ -1,103 +1,115 @@
-import { routeToString } from "@/lib/hill-climbing";
-import type { HillClimbIteration, HillClimbResult, NeighborCandidate } from "@/lib/types";
+import { rutaATexto } from "@/lib/hill-climbing";
+import type { CandidatoVecino, IteracionEscalada, ResultadoEscalada } from "@/lib/types";
 
-export interface TreeLayoutConfig {
-  minWidth: number;
-  childSpacing: number;
-  sidePadding: number;
-  rootY: number;
-  levelGap: number;
-  branchDrop: number;
-  nodeRadius: number;
-  bottomPadding: number;
+export interface ConfiguracionDisenoArbol {
+  anchoMinimo: number;
+  separacionHijos: number;
+  margenLateral: number;
+  raizY: number;
+  separacionNiveles: number;
+  caidaRama: number;
+  radioNodo: number;
+  margenInferior: number;
 }
 
-export interface TreeLayerLayout {
-  iteration: HillClimbIteration;
-  parentX: number;
-  parentY: number;
-  childY: number;
-  positions: number[];
-  selectedX: number;
-  bestIndex: number;
+export interface CapaDisenoArbol {
+  iteracion: IteracionEscalada;
+  padreX: number;
+  padreY: number;
+  hijoY: number;
+  posiciones: number[];
+  seleccionadoX: number;
+  indiceMejor: number;
 }
 
-export interface TreeLayout {
-  width: number;
-  height: number;
-  rootX: number;
-  rootY: number;
-  nodeRadius: number;
-  branchDrop: number;
-  layers: TreeLayerLayout[];
+export interface DisenoArbol {
+  ancho: number;
+  alto: number;
+  raizX: number;
+  raizY: number;
+  radioNodo: number;
+  caidaRama: number;
+  capas: CapaDisenoArbol[];
 }
 
-const DEFAULT_CONFIG: TreeLayoutConfig = {
-  minWidth: 1000,
-  childSpacing: 175,
-  sidePadding: 180,
-  rootY: 92,
-  levelGap: 188,
-  branchDrop: 56,
-  nodeRadius: 44,
-  bottomPadding: 130,
+const CONFIGURACION_PREDETERMINADA: ConfiguracionDisenoArbol = {
+  anchoMinimo: 1000,
+  separacionHijos: 175,
+  margenLateral: 180,
+  raizY: 92,
+  separacionNiveles: 188,
+  caidaRama: 56,
+  radioNodo: 44,
+  margenInferior: 130,
 };
 
-function sameCandidate(a: NeighborCandidate, b: NeighborCandidate): boolean {
-  return a.cost === b.cost && routeToString(a.route) === routeToString(b.route);
+function esMismoCandidato(a: CandidatoVecino, b: CandidatoVecino): boolean {
+  return a.cost === b.cost && rutaATexto(a.route) === rutaATexto(b.route);
 }
 
-export function buildTreeLayout(result: HillClimbResult, config: Partial<TreeLayoutConfig> = {}): TreeLayout {
-  const c = { ...DEFAULT_CONFIG, ...config };
-  const maxChildren = Math.max(1, ...result.iterations.map((iteration) => iteration.neighbors.length));
-  const width = Math.max(c.minWidth, maxChildren * c.childSpacing + c.sidePadding);
-  const rootX = width / 2;
-  const rootY = c.rootY;
-  const height = rootY + result.iterations.length * c.levelGap + c.bottomPadding;
+export function construirDisenoArbol(
+  resultado: ResultadoEscalada,
+  configuracion: Partial<ConfiguracionDisenoArbol> = {},
+): DisenoArbol {
+  const c = { ...CONFIGURACION_PREDETERMINADA, ...configuracion };
+  const maximoHijos = Math.max(1, ...resultado.iterations.map((iteracion) => iteracion.neighbors.length));
+  const ancho = Math.max(c.anchoMinimo, maximoHijos * c.separacionHijos + c.margenLateral);
+  const raizX = ancho / 2;
+  const raizY = c.raizY;
+  const alto = raizY + resultado.iterations.length * c.separacionNiveles + c.margenInferior;
 
-  let parentX = rootX;
-  let parentY = rootY;
+  let padreX = raizX;
+  let padreY = raizY;
 
-  const layers: TreeLayerLayout[] = result.iterations.map((iteration, index) => {
-    const childY = rootY + (index + 1) * c.levelGap;
-    const n = iteration.neighbors.length;
-    const spacing = width / (n + 1);
-    const positions = iteration.neighbors.map((_, childIndex) => spacing * (childIndex + 1));
-    const bestIndex = iteration.neighbors.findIndex((candidate) => sameCandidate(candidate, iteration.bestNeighbor));
-    const selectedX = bestIndex >= 0 ? positions[bestIndex] : positions[0];
-    const layer: TreeLayerLayout = {
-      iteration,
-      parentX,
-      parentY,
-      childY,
-      positions,
-      selectedX,
-      bestIndex,
+  const capas: CapaDisenoArbol[] = resultado.iterations.map((iteracion, indice) => {
+    const hijoY = raizY + (indice + 1) * c.separacionNiveles;
+    const cantidad = iteracion.neighbors.length;
+    const separacion = ancho / (cantidad + 1);
+    const posiciones = iteracion.neighbors.map((_, indiceHijo) => separacion * (indiceHijo + 1));
+    const indiceMejor = iteracion.neighbors.findIndex((candidato) =>
+      esMismoCandidato(candidato, iteracion.bestNeighbor),
+    );
+    const seleccionadoX = indiceMejor >= 0 ? posiciones[indiceMejor] : posiciones[0];
+    const capa: CapaDisenoArbol = {
+      iteracion,
+      padreX,
+      padreY,
+      hijoY,
+      posiciones,
+      seleccionadoX,
+      indiceMejor,
     };
-    parentX = selectedX;
-    parentY = childY;
-    return layer;
+    padreX = seleccionadoX;
+    padreY = hijoY;
+    return capa;
   });
 
   return {
-    width,
-    height,
-    rootX,
-    rootY,
-    nodeRadius: c.nodeRadius,
-    branchDrop: c.branchDrop,
-    layers,
+    ancho,
+    alto,
+    raizX,
+    raizY,
+    radioNodo: c.radioNodo,
+    caidaRama: c.caidaRama,
+    capas,
   };
 }
 
-export function getTreeNodeClass(
-  routeText: string,
-  cost: number,
-  solutionRouteText: string,
-  solutionCost: number,
-  isBest: boolean,
+export function obtenerClaseNodoArbol(
+  textoRuta: string,
+  costo: number,
+  textoRutaSolucion: string,
+  costoSolucion: number,
+  esMejor: boolean,
 ): string {
-  if (routeText === solutionRouteText && cost === solutionCost) return "tree-node-circle is-solution";
-  if (isBest) return "tree-node-circle is-selected";
+  if (textoRuta === textoRutaSolucion && costo === costoSolucion) return "tree-node-circle is-solution";
+  if (esMejor) return "tree-node-circle is-selected";
   return "tree-node-circle";
 }
+
+// Alias de compatibilidad temporal.
+export type TreeLayoutConfig = ConfiguracionDisenoArbol;
+export type TreeLayerLayout = CapaDisenoArbol;
+export type TreeLayout = DisenoArbol;
+export const buildTreeLayout = construirDisenoArbol;
+export const getTreeNodeClass = obtenerClaseNodoArbol;

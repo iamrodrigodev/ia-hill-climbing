@@ -1,4 +1,4 @@
-import { routeToString } from "@/lib/hill-climbing";
+import { rutaATexto } from "@/lib/hill-climbing";
 import { homeContent } from "@/lib/home-content";
 import { baseRun } from "@/lib/mock-data";
 import { SearchTreeView } from "@/components/graph/SearchTreeView";
@@ -25,7 +25,7 @@ export function HomeProcessCard() {
               <article className="explain-item">
                 <h3>{homeContent.stepBlocks.one.title}</h3>
                 <p>
-                  {homeContent.stepBlocks.one.prefix} <code>{routeToString(baseRun.startRoute)}</code> con{" "}
+                  {homeContent.stepBlocks.one.prefix} <code>{rutaATexto(baseRun.startRoute)}</code> con{" "}
                   <code>F={baseRun.startCost}</code>.
                 </p>
               </article>
@@ -36,7 +36,7 @@ export function HomeProcessCard() {
               <article className="explain-item">
                 <h3>{homeContent.stepBlocks.three.title}</h3>
                 <p>
-                  {homeContent.stepBlocks.three.prefix} <code>{routeToString(baseRun.solutionRoute)}</code>{" "}
+                  {homeContent.stepBlocks.three.prefix} <code>{rutaATexto(baseRun.solutionRoute)}</code>{" "}
                   {homeContent.stepBlocks.three.suffix}
                 </p>
               </article>
@@ -45,21 +45,21 @@ export function HomeProcessCard() {
 
           <TabsContent value="iterations">
             <div className="iteration-stack">
-              {baseRun.iterations.map((iteration) => (
-                <article key={iteration.iteration} className="iteration-block">
+              {baseRun.iterations.map((iteracion) => (
+                <article key={iteracion.iteration} className="iteration-block">
                   <h3>
-                    Iteración {iteration.iteration}: {routeToString(iteration.currentRoute)} (F={iteration.currentCost})
+                    Iteración {iteracion.iteration}: {rutaATexto(iteracion.currentRoute)} (F={iteracion.currentCost})
                   </h3>
                   <div className="neighbor-list">
-                    {iteration.neighbors.map((neighbor, index) => (
-                      <p key={`${iteration.iteration}-${index}`}>
-                        {routeToString(neighbor.route)} {"->"} {neighbor.cost}
+                    {iteracion.neighbors.map((vecino, indice) => (
+                      <p key={`${iteracion.iteration}-${indice}`}>
+                        {rutaATexto(vecino.route)} {"->"} {vecino.cost}
                       </p>
                     ))}
                   </div>
                   <p className="best-line">
-                    {homeContent.stepBlocks.bestNeighborPrefix} {routeToString(iteration.bestNeighbor.route)} (
-                    {iteration.bestNeighbor.cost}) {iteration.moved ? "se mueve" : "sin mejora"}
+                    {homeContent.stepBlocks.bestNeighborPrefix} {rutaATexto(iteracion.bestNeighbor.route)} (
+                    {iteracion.bestNeighbor.cost}) {iteracion.moved ? "se mueve" : "sin mejora"}
                   </p>
                 </article>
               ))}

@@ -1,128 +1,146 @@
-import { directedEdgeKey } from "@/lib/hill-climbing";
-import type { WeightedGraph } from "@/lib/types";
+import { claveAristaDirigida } from "@/lib/hill-climbing";
+import type { GrafoPonderado } from "@/lib/types";
 
-export interface GraphPoint {
+export interface PuntoGrafo {
   x: number;
   y: number;
 }
 
-export interface CurveGeometry {
-  fromX: number;
-  fromY: number;
-  toX: number;
-  toY: number;
+export interface GeometriaCurva {
+  desdeX: number;
+  desdeY: number;
+  haciaX: number;
+  haciaY: number;
   controlX: number;
   controlY: number;
-  path: string;
-  labelX: number;
-  labelY: number;
+  ruta: string;
+  etiquetaX: number;
+  etiquetaY: number;
 }
 
-export const VIEWBOX_WIDTH = 860;
-export const VIEWBOX_HEIGHT = 520;
-export const NODE_RADIUS = 26;
+export const ANCHO_VIEWBOX = 860;
+export const ALTO_VIEWBOX = 520;
+export const RADIO_NODO = 26;
 
-export function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
+export function limitar(valor: number, minimo: number, maximo: number): number {
+  return Math.max(minimo, Math.min(maximo, valor));
 }
 
-export function getAutoPositions(nodes: number[]): Record<number, GraphPoint> {
-  if (nodes.length === 0) return {};
-  if (nodes.length === 1) return { [nodes[0]]: { x: VIEWBOX_WIDTH / 2, y: VIEWBOX_HEIGHT / 2 } };
+export function obtenerPosicionesAutomaticas(nodos: number[]): Record<number, PuntoGrafo> {
+  if (nodos.length === 0) return {};
+  if (nodos.length === 1) return { [nodos[0]]: { x: ANCHO_VIEWBOX / 2, y: ALTO_VIEWBOX / 2 } };
 
-  const centerX = VIEWBOX_WIDTH / 2;
-  const centerY = VIEWBOX_HEIGHT / 2;
-  const radius = Math.min(210, 120 + nodes.length * 16);
-  const result: Record<number, GraphPoint> = {};
+  const centroX = ANCHO_VIEWBOX / 2;
+  const centroY = ALTO_VIEWBOX / 2;
+  const radio = Math.min(210, 120 + nodos.length * 16);
+  const posiciones: Record<number, PuntoGrafo> = {};
 
-  nodes.forEach((node, index) => {
-    const angle = (Math.PI * 2 * index) / nodes.length - Math.PI / 2;
-    result[node] = {
-      x: centerX + Math.cos(angle) * radius,
-      y: centerY + Math.sin(angle) * radius,
+  nodos.forEach((nodo, indice) => {
+    const angulo = (Math.PI * 2 * indice) / nodos.length - Math.PI / 2;
+    posiciones[nodo] = {
+      x: centroX + Math.cos(angulo) * radio,
+      y: centroY + Math.sin(angulo) * radio,
     };
   });
 
-  return result;
+  return posiciones;
 }
 
-export function mergeNodePositions(
-  nodes: number[],
-  customPositions?: Record<number, GraphPoint>,
-): Record<number, GraphPoint> {
-  const auto = getAutoPositions(nodes);
-  if (!customPositions) return auto;
+export function unirPosicionesNodos(
+  nodos: number[],
+  posicionesPersonalizadas?: Record<number, PuntoGrafo>,
+): Record<number, PuntoGrafo> {
+  const automaticas = obtenerPosicionesAutomaticas(nodos);
+  if (!posicionesPersonalizadas) return automaticas;
 
-  const merged: Record<number, GraphPoint> = {};
-  nodes.forEach((node) => {
-    merged[node] = customPositions[node] ?? auto[node];
+  const combinadas: Record<number, PuntoGrafo> = {};
+  nodos.forEach((nodo) => {
+    combinadas[nodo] = posicionesPersonalizadas[nodo] ?? automaticas[nodo];
   });
-  return merged;
+  return combinadas;
 }
 
-export function hasDirectedReverse(graph: WeightedGraph, from: number, to: number): boolean {
-  return graph.edges.some((edge) => !edge.bidirectional && edge.from === to && edge.to === from);
+export function tieneReversaDirigida(grafo: GrafoPonderado, desde: number, hacia: number): boolean {
+  return grafo.edges.some((arista) => !arista.bidirectional && arista.from === hacia && arista.to === desde);
 }
 
-export function getEdgeCurvature(graph: WeightedGraph, from: number, to: number, bidirectional: boolean): number {
-  const reverseDirected = hasDirectedReverse(graph, from, to);
-  const sign = from < to ? 1 : -1;
-  return bidirectional ? 18 * sign : reverseDirected ? 36 * sign : 24 * sign;
+export function obtenerCurvaturaArista(
+  grafo: GrafoPonderado,
+  desde: number,
+  hacia: number,
+  bidireccional: boolean,
+): number {
+  const existeReversa = tieneReversaDirigida(grafo, desde, hacia);
+  const signo = desde < hacia ? 1 : -1;
+  return bidireccional ? 18 * signo : existeReversa ? 36 * signo : 24 * signo;
 }
 
-export function getCurveGeometry(
-  from: GraphPoint,
-  to: GraphPoint,
-  curvature: number,
-  radius = NODE_RADIUS,
-): CurveGeometry {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const length = Math.hypot(dx, dy) || 1;
-  const ux = dx / length;
-  const uy = dy / length;
+export function obtenerGeometriaCurva(
+  desde: PuntoGrafo,
+  hacia: PuntoGrafo,
+  curvatura: number,
+  radio = RADIO_NODO,
+): GeometriaCurva {
+  const dx = hacia.x - desde.x;
+  const dy = hacia.y - desde.y;
+  const largo = Math.hypot(dx, dy) || 1;
+  const ux = dx / largo;
+  const uy = dy / largo;
   const nx = -uy;
   const ny = ux;
 
-  const fromX = from.x + ux * radius;
-  const fromY = from.y + uy * radius;
-  const toX = to.x - ux * radius;
-  const toY = to.y - uy * radius;
+  const desdeX = desde.x + ux * radio;
+  const desdeY = desde.y + uy * radio;
+  const haciaX = hacia.x - ux * radio;
+  const haciaY = hacia.y - uy * radio;
 
-  const midX = (fromX + toX) / 2;
-  const midY = (fromY + toY) / 2;
-  const controlX = midX + nx * curvature;
-  const controlY = midY + ny * curvature;
+  const medioX = (desdeX + haciaX) / 2;
+  const medioY = (desdeY + haciaY) / 2;
+  const controlX = medioX + nx * curvatura;
+  const controlY = medioY + ny * curvatura;
 
   const t = 0.5;
-  const baseLabelX = (1 - t) * (1 - t) * fromX + 2 * (1 - t) * t * controlX + t * t * toX;
-  const baseLabelY = (1 - t) * (1 - t) * fromY + 2 * (1 - t) * t * controlY + t * t * toY;
-  const normalLength = Math.hypot(nx, ny) || 1;
-  // Keep label visually attached to its edge while still avoiding nearby nodes.
-  const offset = -Math.sign(curvature || 1) * 6;
-  const labelX = baseLabelX + (nx / normalLength) * offset;
-  const labelY = baseLabelY + (ny / normalLength) * offset;
+  const baseEtiquetaX = (1 - t) * (1 - t) * desdeX + 2 * (1 - t) * t * controlX + t * t * haciaX;
+  const baseEtiquetaY = (1 - t) * (1 - t) * desdeY + 2 * (1 - t) * t * controlY + t * t * haciaY;
+  const longitudNormal = Math.hypot(nx, ny) || 1;
+  const desplazamiento = -Math.sign(curvatura || 1) * 6;
+  const etiquetaX = baseEtiquetaX + (nx / longitudNormal) * desplazamiento;
+  const etiquetaY = baseEtiquetaY + (ny / longitudNormal) * desplazamiento;
 
   return {
-    fromX,
-    fromY,
-    toX,
-    toY,
+    desdeX,
+    desdeY,
+    haciaX,
+    haciaY,
     controlX,
     controlY,
-    path: `M ${fromX} ${fromY} Q ${controlX} ${controlY} ${toX} ${toY}`,
-    labelX,
-    labelY,
+    ruta: `M ${desdeX} ${desdeY} Q ${controlX} ${controlY} ${haciaX} ${haciaY}`,
+    etiquetaX,
+    etiquetaY,
   };
 }
 
-export function shouldHighlightEdge(
-  edgeFrom: number,
-  edgeTo: number,
-  bidirectional: boolean,
-  steps: Set<string>,
+export function debeResaltarArista(
+  desdeArista: number,
+  haciaArista: number,
+  bidireccional: boolean,
+  pasos: Set<string>,
 ): boolean {
-  if (steps.has(directedEdgeKey(edgeFrom, edgeTo))) return true;
-  if (bidirectional && steps.has(directedEdgeKey(edgeTo, edgeFrom))) return true;
+  if (pasos.has(claveAristaDirigida(desdeArista, haciaArista))) return true;
+  if (bidireccional && pasos.has(claveAristaDirigida(haciaArista, desdeArista))) return true;
   return false;
 }
+
+// Alias de compatibilidad temporal.
+export type GraphPoint = PuntoGrafo;
+export type CurveGeometry = GeometriaCurva;
+export const VIEWBOX_WIDTH = ANCHO_VIEWBOX;
+export const VIEWBOX_HEIGHT = ALTO_VIEWBOX;
+export const NODE_RADIUS = RADIO_NODO;
+export const clamp = limitar;
+export const getAutoPositions = obtenerPosicionesAutomaticas;
+export const mergeNodePositions = unirPosicionesNodos;
+export const hasDirectedReverse = tieneReversaDirigida;
+export const getEdgeCurvature = obtenerCurvaturaArista;
+export const getCurveGeometry = obtenerGeometriaCurva;
+export const shouldHighlightEdge = debeResaltarArista;
