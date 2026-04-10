@@ -11,7 +11,6 @@ export function HomeHero() {
         <code>{baseCaseExpectedText.bestLocalRoute}</code> {homeContent.hero.introEnd}{" "}
         <code>F={baseCaseExpectedText.bestLocalCost}</code>.
       </p>
-      <p>{homeContent.hero.tspExplanation}</p>
       <p>{homeContent.hero.algorithmExplanation}</p>
     </section>
   );
