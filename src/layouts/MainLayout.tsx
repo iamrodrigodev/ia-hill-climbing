@@ -4,12 +4,11 @@ import { Navbar } from "@/components/navigation/Navbar";
 
 function Footer() {
   return (
-    <footer className="footer">
-      <div className="container footer-inner">
-        <p>Hill Climbing Lab · Caso base + constructor interactivo</p>
-        <small>React 19 · TypeScript · Radix UI</small>
-      </div>
-    </footer>
+      <footer className="footer">
+        <div className="container footer-inner">
+          <p>Hill Climbing</p>
+        </div>
+      </footer>
   );
 }
 
@@ -21,7 +20,7 @@ export function MainLayout() {
         <Outlet />
       </main>
       <Footer />
-      <Toaster position="top-right" toastOptions={{ classNames: { toast: "sonner-toast" } }} />
+      <Toaster position="bottom-left" toastOptions={{ classNames: { toast: "sonner-toast" } }} />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { to: "/", label: "Caso Base" },
+  { to: "/", label: "Ejemplo" },
   { to: "/constructor", label: "Constructor" },
 ];
 
@@ -19,7 +19,7 @@ export function Navbar() {
           <span className="brand-icon">
             <Network size={14} />
           </span>
-          <span className="brand-text">Hill Climbing TSP</span>
+          <span className="brand-text">Hill Climbing</span>
         </Link>
 
         <nav className="nav-desktop">

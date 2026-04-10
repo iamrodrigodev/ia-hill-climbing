@@ -1,138 +1,233 @@
+import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { routeToString } from "@/lib/hill-climbing";
-import { baseCaseExpectedText, baseGraph, baseRun } from "@/lib/mock-data";
+import { baseGraph, baseRun } from "@/lib/mock-data";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { SearchTreeView } from "@/components/graph/SearchTreeView";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+type Tone = "start" | "progress" | "optimal" | "stop";
+
+interface ExampleStage {
+  title: string;
+  subtitle: string;
+  route: number[] | null;
+  cost: number | null;
+  neighbors: Array<{ routeText: string; cost: number; isBest: boolean }>;
+  decision: string;
+  tone: Tone;
+}
 
 const basePositions = {
-  0: { x: 120, y: 120 },
-  1: { x: 350, y: 130 },
-  2: { x: 640, y: 130 },
-  3: { x: 260, y: 300 },
+  0: { x: 96, y: 116 },
+  1: { x: 432, y: 168 },
+  2: { x: 760, y: 118 },
+  3: { x: 260, y: 352 },
 };
 
+const baseLabels = { 0: "0", 1: "1", 2: "2", 3: "3" };
+
+function buildStages(): ExampleStage[] {
+  const initialStage: ExampleStage = {
+    title: "Estado inicial",
+    subtitle: "Presentacion del grafo base para empezar el ejemplo.",
+    route: null,
+    cost: null,
+    neighbors: [],
+    decision: "Aqui solo observamos el grafo. Presiona Siguiente para comenzar con la Iteracion 1.",
+    tone: "start",
+  };
+
+  const runStages = baseRun.iterations.map((iteration, index) => {
+    const currentText = routeToString(iteration.currentRoute);
+    const bestText = routeToString(iteration.bestNeighbor.route);
+    const neighbors = iteration.neighbors.map((neighbor) => ({
+      routeText: routeToString(neighbor.route),
+      cost: neighbor.cost,
+      isBest:
+        routeToString(neighbor.route) === bestText && neighbor.cost === iteration.bestNeighbor.cost,
+    }));
+
+    const tone: Tone =
+      index === 0
+        ? "start"
+        : iteration.moved
+          ? iteration.bestNeighbor.cost === baseRun.solutionCost
+            ? "optimal"
+            : "progress"
+          : "stop";
+
+    return {
+      title: `Iteracion ${iteration.iteration}`,
+      subtitle: `Ruta actual ${currentText} con F=${iteration.currentCost}`,
+      route: iteration.currentRoute,
+      cost: iteration.currentCost,
+      neighbors,
+      decision: iteration.moved
+        ? `Se elige ${bestText} con F=${iteration.bestNeighbor.cost}`
+        : `Se detiene porque no hay mejora estricta: el mejor vecino es ${bestText} con F=${iteration.bestNeighbor.cost} y la ruta actual ${currentText} tiene F=${iteration.currentCost}. Como ${iteration.bestNeighbor.cost} >= ${iteration.currentCost}, no se mueve (optimo local).`,
+      tone,
+    } satisfies ExampleStage;
+  });
+
+  return [initialStage, ...runStages];
+}
+
+function toneLabel(tone: Tone): string {
+  if (tone === "start") return "Inicio";
+  if (tone === "progress") return "Mejora";
+  if (tone === "optimal") return "Mejor encontrado";
+  return "Paro";
+}
+
 export function HomePage() {
+  const stages = useMemo(buildStages, []);
+  const [stageIndex, setStageIndex] = useState(0);
+  const stage = stages[stageIndex];
+  const showFinalAnswer = stageIndex === stages.length - 1 || stage.tone === "stop";
+
   return (
     <div className="container page-stack">
-      <section className="hero-lite">
-        <h1>Caso base del problema TSP</h1>
-        <p>
-          Solucion inicial <code>{baseCaseExpectedText.startRoute}</code> con <code>F={baseCaseExpectedText.startCost}</code>.
-          Hill Climbing evalua vecinos y termina en <code>{baseCaseExpectedText.bestLocalRoute}</code> con{" "}
-          <code>F={baseCaseExpectedText.bestLocalCost}</code>.
-        </p>
-      </section>
-
-      <section className="layout-two">
-        <Card>
-          <CardHeader>
-            <CardTitle>Grafo del enunciado</CardTitle>
-            <CardDescription>Conexiones bidireccionales y pesos del caso de clase.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <GraphCanvas
-              graph={baseGraph}
-              activeRoute={baseRun.startRoute}
-              nodePositions={basePositions}
-              nodeLabels={{ 0: "0", 1: "1", 2: "2", 3: "3" }}
-              title="Ruta inicial: 0231"
-              height={420}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Tabla de costos</CardTitle>
-            <CardDescription>Datos exactos del problema.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Conexion</th>
-                    <th>Costo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {baseGraph.edges.map((edge) => (
-                    <tr key={edge.id}>
-                      <td>
-                        {edge.from} ↔ {edge.to}
-                      </td>
-                      <td>{edge.weight}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-
       <Card>
         <CardHeader>
-          <CardTitle>Proceso paso a paso</CardTitle>
-          <CardDescription>Vecinos por iteracion, seleccion y criterio de paro.</CardDescription>
+          <div className="case-topbar">
+            <div>
+              <CardTitle>Ejemplo guiado del caso base</CardTitle>
+              <CardDescription>
+                Avanza paso a paso para ver costos, vecinos y decisiones del algoritmo.
+              </CardDescription>
+            </div>
+            <div className="stepper-controls">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setStageIndex((prev) => Math.max(0, prev - 1))}
+                disabled={stageIndex === 0}
+              >
+                <ChevronLeft size={14} />
+                Anterior
+              </Button>
+              <span className={`step-badge tone-${stage.tone}`}>
+                {toneLabel(stage.tone)} - {stageIndex + 1}/{stages.length}
+              </span>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setStageIndex((prev) => Math.min(stages.length - 1, prev + 1))}
+                disabled={stageIndex === stages.length - 1}
+              >
+                Siguiente
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="steps">
-            <TabsList>
-              <TabsTrigger value="steps">Pasos</TabsTrigger>
-              <TabsTrigger value="iterations">Iteraciones</TabsTrigger>
-              <TabsTrigger value="tree">Arbol</TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="steps">
-              <div className="explain-grid">
-                <article className="explain-item">
-                  <h3>1. Inicio</h3>
-                  <p>
-                    Estado inicial: <code>{routeToString(baseRun.startRoute)}</code> con <code>F={baseRun.startCost}</code>.
-                  </p>
-                </article>
-                <article className="explain-item">
-                  <h3>2. Vecinos</h3>
-                  <p>En cada iteracion se generan swaps y se toma el vecino de menor costo.</p>
-                </article>
-                <article className="explain-item">
-                  <h3>3. Paro</h3>
-                  <p>
-                    Se detiene en <code>{routeToString(baseRun.solutionRoute)}</code> porque ya no hay mejora estricta.
-                  </p>
-                </article>
-              </div>
-            </TabsContent>
+        <CardContent className="case-interactive-content">
+          <section className="case-grid">
+            <article className="case-graph-block">
+              <h3>{stage.title}</h3>
+              <p>{stage.subtitle}</p>
+              <GraphCanvas
+                graph={baseGraph}
+                activeRoute={stage.route ?? undefined}
+                nodePositions={basePositions}
+                nodeLabels={baseLabels}
+                highlightTheme={stage.tone}
+                height={450}
+              />
+            </article>
 
-            <TabsContent value="iterations">
-              <div className="iteration-stack">
-                {baseRun.iterations.map((iteration) => (
-                  <article key={iteration.iteration} className="iteration-block">
-                    <h3>
-                      Iteracion {iteration.iteration}: {routeToString(iteration.currentRoute)} (F={iteration.currentCost})
-                    </h3>
-                    <div className="neighbor-list">
-                      {iteration.neighbors.map((neighbor, index) => (
-                        <p key={`${iteration.iteration}-${index}`}>
-                          {routeToString(neighbor.route)} {"->"} {neighbor.cost}
-                        </p>
+            <article className="case-side-block compact">
+              <div className="case-mini-card cost-table-card">
+                <h4>Tabla de costos</h4>
+                <div className="table-wrap">
+                  <table className="data-table cost-table">
+                    <thead>
+                      <tr>
+                        <th>Conexion</th>
+                        <th>Costo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {baseGraph.edges.map((edge) => (
+                        <tr key={edge.id}>
+                          <td>
+                            {edge.from} {"\u2194"} {edge.to}
+                          </td>
+                          <td>{edge.weight}</td>
+                        </tr>
                       ))}
-                    </div>
-                    <p className="best-line">
-                      Mejor vecino: {routeToString(iteration.bestNeighbor.route)} ({iteration.bestNeighbor.cost}){" "}
-                      {iteration.moved ? "se mueve" : "sin mejora"}
-                    </p>
-                  </article>
-                ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </TabsContent>
 
-            <TabsContent value="tree">
-              <SearchTreeView result={baseRun} />
-            </TabsContent>
-          </Tabs>
+              <div className="case-mini-card compact">
+                <h4>Que esta pasando?</h4>
+                <p>
+                  Ruta actual: <code>{stage.route ? routeToString(stage.route) : "-"}</code> -{" "}
+                  <code>F={stage.cost ?? "-"}</code>
+                </p>
+                <p>{stage.decision}</p>
+              </div>
+
+              <div className="case-mini-card compact final-answer">
+                <h4>Respuesta final</h4>
+                {showFinalAnswer ? (
+                  <>
+                    <p>
+                      X = <strong>[{baseRun.solutionRoute.join(",")}]</strong>
+                    </p>
+                    <p>
+                      F = <strong>{baseRun.solutionCost}</strong>
+                    </p>
+                  </>
+                ) : (
+                  <p>Se muestra cuando llegues al paso de paro.</p>
+                )}
+              </div>
+            </article>
+          </section>
+
+          <section className="neighbors-inline">
+            <h4>Vecinos evaluados en esta iteracion</h4>
+            <div className="neighbor-pills">
+              {stage.neighbors.length > 0 ? (
+                stage.neighbors.map((neighbor, index) => (
+                  <span
+                    key={`${stageIndex}-${index}`}
+                    className={`neighbor-pill ${neighbor.isBest ? "is-best" : ""}`}
+                  >
+                    {neighbor.routeText} = {neighbor.cost}
+                  </span>
+                ))
+              ) : (
+                <span className="neighbor-pill">Aun sin vecinos (Paso 0).</span>
+              )}
+            </div>
+            <div className="inline-actions">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="primary" size="sm">
+                    Ver arbol completo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="tree-modal-content">
+                  <DialogHeader>
+                    <DialogTitle>Arbol de busqueda del caso base</DialogTitle>
+                    <DialogDescription>
+                      Visualizacion completa del recorrido para el caso base. Salida exitosa: X=[
+                      {baseRun.solutionRoute.join(",")}], F={baseRun.solutionCost}.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <SearchTreeView result={baseRun} summaryVariant="none" layoutVariant="compact" />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </section>
         </CardContent>
       </Card>
     </div>

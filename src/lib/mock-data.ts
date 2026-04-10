@@ -1,5 +1,5 @@
-import { createEdge, hillClimb } from "@/lib/hill-climbing";
-import type { GraphPreset, WeightedGraph } from "@/lib/types";
+import { createEdge } from "@/lib/hill-climbing";
+import type { GraphPreset, HillClimbResult, WeightedGraph } from "@/lib/types";
 
 export const baseGraph: WeightedGraph = {
   nodes: [0, 1, 2, 3],
@@ -42,7 +42,61 @@ export const presets: GraphPreset[] = [
   },
 ];
 
-export const baseRun = hillClimb(baseGraph, [0, 2, 3, 1]);
+export const baseRun: HillClimbResult = {
+  startRoute: [0, 2, 3, 1],
+  startCost: 1100,
+  iterations: [
+    {
+      iteration: 1,
+      currentRoute: [0, 2, 3, 1],
+      currentCost: 1100,
+      neighbors: [
+        { route: [2, 0, 3, 1], cost: 800, swap: [0, 1] },
+        { route: [3, 2, 0, 1], cost: 1200, swap: [0, 2] },
+        { route: [1, 2, 3, 0], cost: 800, swap: [0, 3] },
+        { route: [0, 3, 2, 1], cost: 800, swap: [1, 2] },
+        { route: [0, 1, 3, 2], cost: 700, swap: [1, 3] },
+        { route: [0, 2, 1, 3], cost: 1000, swap: [2, 3] },
+      ],
+      bestNeighbor: { route: [0, 1, 3, 2], cost: 700, swap: [1, 3] },
+      moved: true,
+    },
+    {
+      iteration: 2,
+      currentRoute: [0, 1, 3, 2],
+      currentCost: 700,
+      neighbors: [
+        { route: [1, 0, 3, 2], cost: 700, swap: [0, 1] },
+        { route: [3, 1, 0, 2], cost: 900, swap: [0, 2] },
+        { route: [2, 1, 3, 0], cost: 500, swap: [0, 3] },
+        { route: [0, 3, 1, 2], cost: 500, swap: [1, 2] },
+        { route: [0, 2, 3, 1], cost: 1100, swap: [1, 3] },
+        { route: [0, 1, 2, 3], cost: 900, swap: [2, 3] },
+      ],
+      bestNeighbor: { route: [2, 1, 3, 0], cost: 500, swap: [0, 3] },
+      moved: true,
+    },
+    {
+      iteration: 3,
+      currentRoute: [2, 1, 3, 0],
+      currentCost: 500,
+      neighbors: [
+        { route: [1, 2, 3, 0], cost: 800, swap: [0, 1] },
+        { route: [3, 1, 2, 0], cost: 1000, swap: [0, 2] },
+        { route: [0, 1, 3, 2], cost: 700, swap: [0, 3] },
+        { route: [2, 3, 1, 0], cost: 700, swap: [1, 2] },
+        { route: [2, 0, 3, 1], cost: 800, swap: [1, 3] },
+        { route: [2, 1, 0, 3], cost: 500, swap: [2, 3] },
+      ],
+      bestNeighbor: { route: [2, 3, 1, 0], cost: 700, swap: [1, 2] },
+      moved: false,
+    },
+  ],
+  solutionRoute: [2, 1, 3, 0],
+  solutionCost: 500,
+  solutionIteration: 2,
+  stopReason: "local-optimum",
+};
 
 export const baseCaseExpectedText = {
   startRoute: "0231",
