@@ -35,7 +35,7 @@ export const homeContent = {
   stepBlocks: {
     one: {
       title: "1. Inicio",
-      prefix: "Estado inicial:",
+      prefix: "Estado inicial y objetivo: visitar todos los nodos una vez y regresar al inicio.",
     },
     two: {
       title: "2. Vecinos",
@@ -44,7 +44,7 @@ export const homeContent = {
     three: {
       title: "3. Paro",
       prefix: "Se detiene en",
-      suffix: "porque no existe un vecino con costo menor.",
+      suffix: "porque el mejor vecino no mejora el costo actual; se alcanza un óptimo local.",
     },
     bestNeighborPrefix: "Mejor vecino:",
     bestNeighborAction: {
