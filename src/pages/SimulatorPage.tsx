@@ -1,215 +1,25 @@
-import { useMemo, useState } from "react";
 import { MousePointer2, PlusCircle, Share2, Trash2, Play, RotateCcw, Wand2 } from "lucide-react";
-import { toast } from "sonner";
 import * as Label from "@radix-ui/react-label";
-import {
-  cloneGraph,
-  getEdgeCost,
-  hillClimb,
-  isRouteValid,
-  parseRoute,
-  routeToString,
-} from "@/lib/hill-climbing";
-import { presets } from "@/lib/mock-data";
-import { BASE_POSITIONS, formatDefaultRoute, nextNodeId, parseIterations, removeNode, upsertEdge, type Point } from "@/lib/simulator-helpers";
-import type { HillClimbResult, WeightedGraph } from "@/lib/types";
-import { GraphCanvas, type EditorMode } from "@/components/graph/GraphCanvas";
+import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { SearchTreeView } from "@/components/graph/SearchTreeView";
 import { RouteCostChart } from "@/components/graph/RouteCostChart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { routeToString } from "@/lib/hill-climbing";
+import { useSimulatorController } from "@/lib/use-simulator-controller";
 
 export function SimulatorPage() {
-  const [graph, setGraph] = useState<WeightedGraph>({ nodes: [], edges: [] });
-  const [positions, setPositions] = useState<Record<number, Point>>({});
-  const [labels, setLabels] = useState<Record<number, string>>({});
-  const [mode, setMode] = useState<EditorMode>("select");
-  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
-  const [pendingEdgeFromId, setPendingEdgeFromId] = useState<number | null>(null);
-  const [draggingNodeId, setDraggingNodeId] = useState<number | null>(null);
-
-  const [routeInput, setRouteInput] = useState("");
-  const [maxIterationsInput, setMaxIterationsInput] = useState("30");
-  const [result, setResult] = useState<HillClimbResult | null>(null);
-  const [selectedIteration, setSelectedIteration] = useState(1);
-
-  const [edgeDialogOpen, setEdgeDialogOpen] = useState(false);
-  const [edgeDialogTarget, setEdgeDialogTarget] = useState<number | null>(null);
-  const [edgeWeightInput, setEdgeWeightInput] = useState("100");
-  const [edgeBidirectional, setEdgeBidirectional] = useState(true);
-
-  const activeIteration = result?.iterations.find((iteration) => iteration.iteration === selectedIteration) ?? null;
-  const activeRoute = activeIteration?.currentRoute ?? result?.solutionRoute;
-
-  const costSeries = useMemo(() => {
-    if (!result) return [];
-    const values = [result.startCost];
-    result.iterations.forEach((iteration) => {
-      if (iteration.moved) values.push(iteration.bestNeighbor.cost);
-    });
-    return values;
-  }, [result]);
-
-  const setEditorMode = (nextMode: EditorMode) => {
-    setMode(nextMode);
-    if (nextMode !== "add-edge") setPendingEdgeFromId(null);
-    if (nextMode !== "select") setSelectedNodeId(null);
-  };
-
-  const handleCanvasClick = (x: number, y: number) => {
-    if (mode === "add-node") {
-      const nodeId = nextNodeId(graph.nodes);
-      setGraph((prev) => ({ ...prev, nodes: [...prev.nodes, nodeId] }));
-      setPositions((prev) => ({ ...prev, [nodeId]: { x, y } }));
-      setLabels((prev) => ({ ...prev, [nodeId]: String(nodeId) }));
-      if (!routeInput) setRouteInput(formatDefaultRoute([...graph.nodes, nodeId]));
-      toast.success(`Nodo ${nodeId} agregado.`);
-      return;
-    }
-
-    if (mode === "select") {
-      setSelectedNodeId(null);
-    }
-  };
-
-  const handleNodeClick = (nodeId: number) => {
-    if (mode === "delete") {
-      setGraph((prev) => removeNode(prev, nodeId));
-      setPositions((prev) => {
-        const next = { ...prev };
-        delete next[nodeId];
-        return next;
-      });
-      setLabels((prev) => {
-        const next = { ...prev };
-        delete next[nodeId];
-        return next;
-      });
-      if (selectedNodeId === nodeId) setSelectedNodeId(null);
-      toast.success(`Nodo ${nodeId} eliminado.`);
-      return;
-    }
-
-    if (mode === "add-edge") {
-      if (pendingEdgeFromId === null) {
-        setPendingEdgeFromId(nodeId);
-        toast.info(`Nodo origen: ${nodeId}. Ahora elige un nodo destino.`);
-        return;
-      }
-
-      if (pendingEdgeFromId === nodeId) {
-        toast.error("Selecciona un nodo destino distinto.");
-        return;
-      }
-
-      setEdgeDialogTarget(nodeId);
-      setEdgeDialogOpen(true);
-      return;
-    }
-
-    setSelectedNodeId(nodeId);
-  };
-
-  const handleEdgeClick = (edgeId: string) => {
-    if (mode !== "delete") return;
-    setGraph((prev) => ({
-      ...prev,
-      edges: prev.edges.filter((edge) => edge.id !== edgeId),
-    }));
-    toast.success("Conexion eliminada.");
-  };
-
-  const confirmEdgeCreation = () => {
-    if (pendingEdgeFromId === null || edgeDialogTarget === null) {
-      setEdgeDialogOpen(false);
-      return;
-    }
-
-    const weight = Math.max(1, Math.floor(Number(edgeWeightInput)));
-    if (!Number.isFinite(weight)) {
-      toast.error("El peso debe ser numerico.");
-      return;
-    }
-
-    setGraph((prev) => upsertEdge(prev, pendingEdgeFromId, edgeDialogTarget, weight, edgeBidirectional));
-    setEdgeDialogOpen(false);
-    setPendingEdgeFromId(null);
-    setEdgeDialogTarget(null);
-    setEdgeWeightInput("100");
-    setEdgeBidirectional(true);
-    toast.success("Conexion creada.");
-  };
-
-  const runAlgorithm = () => {
-    if (graph.nodes.length < 2) {
-      toast.error("Agrega al menos 2 nodos para ejecutar el algoritmo.");
-      return;
-    }
-
-    const route = parseRoute(routeInput);
-    if (!isRouteValid(route, graph.nodes)) {
-      toast.error("Ruta invalida. Debe incluir exactamente todos los nodos del grafo.");
-      return;
-    }
-
-    for (let i = 0; i < route.length - 1; i += 1) {
-      const cost = getEdgeCost(graph, route[i], route[i + 1]);
-      if (!Number.isFinite(cost)) {
-        toast.error(`No existe conexion entre ${route[i]} y ${route[i + 1]}.`);
-        return;
-      }
-    }
-
-    const next = hillClimb(graph, route, parseIterations(maxIterationsInput));
-    setResult(next);
-    setSelectedIteration(1);
-    toast.success(`Resultado: ${routeToString(next.solutionRoute)} con F=${next.solutionCost}.`);
-  };
-
-  const clearAll = () => {
-    setGraph({ nodes: [], edges: [] });
-    setPositions({});
-    setLabels({});
-    setSelectedNodeId(null);
-    setPendingEdgeFromId(null);
-    setRouteInput("");
-    setResult(null);
-    toast.success("Lienzo limpiado.");
-  };
-
-  const loadBaseCase = () => {
-    const preset = presets.find((item) => item.id === "base") ?? presets[0];
-    const scenario = cloneGraph(preset.graph);
-    const nextLabels: Record<number, string> = {};
-    scenario.nodes.forEach((node) => {
-      nextLabels[node] = String(node);
-    });
-
-    setGraph(scenario);
-    setLabels(nextLabels);
-    setPositions(BASE_POSITIONS);
-    setRouteInput(preset.defaultRoute.join(","));
-    setResult(hillClimb(scenario, preset.defaultRoute, parseIterations(maxIterationsInput)));
-    setSelectedIteration(1);
-    setMode("select");
-    setPendingEdgeFromId(null);
-    toast.info("Caso base cargado.");
-  };
-
-  const applyAutoRoute = () => {
-    const ordered = [...graph.nodes].sort((a, b) => a - b);
-    setRouteInput(formatDefaultRoute(ordered));
-  };
+  const controller = useSimulatorController();
+  const sourceLabel = controller.graphSource === "example" ? "Ejemplo de clase" : "Construido por ti";
+  const runSourceLabel =
+    controller.lastRunSource === "example"
+      ? "Resultado del ejemplo de clase"
+      : controller.lastRunSource === "custom"
+        ? "Resultado generado por ti"
+        : "Sin ejecucion";
 
   return (
     <div className="container page-stack">
@@ -226,67 +36,92 @@ export function SimulatorPage() {
           <CardHeader>
             <CardTitle>Lienzo del grafo</CardTitle>
             <CardDescription>
-              Modo actual: <strong>{mode}</strong>
-              {mode === "add-edge" && pendingEdgeFromId !== null ? ` - origen ${pendingEdgeFromId}` : ""}
+              Modo actual: <strong>{controller.mode}</strong>
+              {controller.mode === "add-edge" && controller.pendingEdgeFromId !== null
+                ? ` - origen ${controller.pendingEdgeFromId}`
+                : ""}
             </CardDescription>
+            <div className="source-line">
+              <span className={`source-chip ${controller.graphSource === "example" ? "is-example" : "is-custom"}`}>
+                {sourceLabel}
+              </span>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="mode-toolbar">
-              <Button variant={mode === "select" ? "primary" : "outline"} size="sm" onClick={() => setEditorMode("select")}>
+              <Button
+                variant={controller.mode === "select" ? "primary" : "outline"}
+                size="sm"
+                onClick={() => controller.setEditorMode("select")}
+              >
                 <MousePointer2 size={14} />
                 Mover
               </Button>
-              <Button variant={mode === "add-node" ? "primary" : "outline"} size="sm" onClick={() => setEditorMode("add-node")}>
+              <Button
+                variant={controller.mode === "add-node" ? "primary" : "outline"}
+                size="sm"
+                onClick={() => controller.setEditorMode("add-node")}
+              >
                 <PlusCircle size={14} />
                 Nodo
               </Button>
-              <Button variant={mode === "add-edge" ? "primary" : "outline"} size="sm" onClick={() => setEditorMode("add-edge")}>
+              <Button
+                variant={controller.mode === "add-edge" ? "primary" : "outline"}
+                size="sm"
+                onClick={() => controller.setEditorMode("add-edge")}
+              >
                 <Share2 size={14} />
                 Conexion
               </Button>
-              <Button variant={mode === "delete" ? "primary" : "outline"} size="sm" onClick={() => setEditorMode("delete")}>
+              <Button
+                variant={controller.mode === "delete" ? "primary" : "outline"}
+                size="sm"
+                onClick={() => controller.setEditorMode("delete")}
+              >
                 <Trash2 size={14} />
                 Eliminar
               </Button>
             </div>
 
             <div className="canvas-actions">
-              <Button variant="outline" onClick={loadBaseCase}>
+              <Button variant="outline" onClick={controller.loadBaseCase}>
                 <Wand2 size={14} />
                 Cargar caso base
               </Button>
-              <Button variant="outline" onClick={clearAll}>
+              <Button variant="outline" onClick={controller.clearAll}>
                 <RotateCcw size={14} />
                 Limpiar lienzo
               </Button>
             </div>
 
             <GraphCanvas
-              graph={graph}
-              activeRoute={activeRoute}
-              nodePositions={positions}
-              nodeLabels={labels}
-              selectedNodeId={selectedNodeId}
-              pendingEdgeFromId={pendingEdgeFromId}
-              mode={mode}
-              onCanvasClick={handleCanvasClick}
-              onNodeClick={handleNodeClick}
-              onEdgeClick={handleEdgeClick}
+              graph={controller.graph}
+              activeRoute={controller.activeRoute}
+              nodePositions={controller.positions}
+              nodeLabels={controller.labels}
+              selectedNodeId={controller.selectedNodeId}
+              pendingEdgeFromId={controller.pendingEdgeFromId}
+              mode={controller.mode}
+              onCanvasClick={controller.handleCanvasClick}
+              onNodeClick={controller.handleNodeClick}
+              onEdgeClick={controller.handleEdgeClick}
               onNodePointerDown={(nodeId) => {
-                if (mode === "select") setDraggingNodeId(nodeId);
+                if (controller.mode === "select") controller.setDraggingNodeId(nodeId);
               }}
               onPointerMove={(x, y) => {
-                if (draggingNodeId === null || mode !== "select") return;
-                setPositions((prev) => ({ ...prev, [draggingNodeId]: { x, y } }));
+                if (controller.draggingNodeId === null || controller.mode !== "select") return;
+                controller.setPositions((prev) => ({ ...prev, [controller.draggingNodeId!]: { x, y } }));
               }}
               onPointerUp={() => {
-                if (draggingNodeId !== null) setDraggingNodeId(null);
+                if (controller.draggingNodeId !== null) controller.setDraggingNodeId(null);
               }}
               height={560}
             />
+
             <div className="canvas-help">
               <p className="muted-note">
-                Agrega al menos 2 nodos para ejecutar el algoritmo. Coloca nodos y luego crea conexiones antes de pulsar Ejecutar.
+                Agrega al menos 2 nodos para ejecutar el algoritmo. Coloca nodos y luego crea conexiones antes de pulsar
+                Ejecutar.
               </p>
             </div>
           </CardContent>
@@ -302,21 +137,21 @@ export function SimulatorPage() {
                   <CardDescription>Personaliza el nombre visible del nodo.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {selectedNodeId === null ? (
+                  {controller.selectedNodeId === null ? (
                     <p className="muted-note">Selecciona un nodo en modo mover.</p>
                   ) : (
                     <div className="control-stack">
-                      <p className="muted-note">ID: {selectedNodeId}</p>
+                      <p className="muted-note">ID: {controller.selectedNodeId}</p>
                       <Label.Root htmlFor="node-label" className="field-label">
                         Nombre
                       </Label.Root>
                       <Input
                         id="node-label"
-                        value={labels[selectedNodeId] ?? String(selectedNodeId)}
+                        value={controller.labels[controller.selectedNodeId] ?? String(controller.selectedNodeId)}
                         onChange={(event) =>
-                          setLabels((prev) => ({
+                          controller.setLabels((prev) => ({
                             ...prev,
-                            [selectedNodeId]: event.target.value || String(selectedNodeId),
+                            [controller.selectedNodeId!]: event.target.value || String(controller.selectedNodeId),
                           }))
                         }
                       />
@@ -336,10 +171,15 @@ export function SimulatorPage() {
                   <Input
                     id="route-input"
                     placeholder="0,2,3,1"
-                    value={routeInput}
-                    onChange={(event) => setRouteInput(event.target.value)}
+                    value={controller.routeInput}
+                    onChange={(event) => controller.setRouteInput(event.target.value)}
                   />
-                  <Button variant="outline" size="sm" onClick={applyAutoRoute} disabled={graph.nodes.length === 0}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={controller.applyAutoRoute}
+                    disabled={controller.graph.nodes.length === 0}
+                  >
                     Usar orden de IDs
                   </Button>
 
@@ -351,11 +191,11 @@ export function SimulatorPage() {
                     type="number"
                     min={1}
                     max={200}
-                    value={maxIterationsInput}
-                    onChange={(event) => setMaxIterationsInput(event.target.value)}
+                    value={controller.maxIterationsInput}
+                    onChange={(event) => controller.setMaxIterationsInput(event.target.value)}
                   />
 
-                  <Button onClick={runAlgorithm}>
+                  <Button onClick={controller.runAlgorithm}>
                     <Play size={14} />
                     Ejecutar
                   </Button>
@@ -370,13 +210,22 @@ export function SimulatorPage() {
         <CardHeader>
           <CardTitle>Arbol del algoritmo</CardTitle>
           <CardDescription>
-            {result
-              ? `Solucion: ${routeToString(result.solutionRoute)} con F=${result.solutionCost}`
+            {controller.result
+              ? `Solucion: ${routeToString(controller.result.solutionRoute)} con F=${controller.result.solutionCost}`
               : "Ejecuta el algoritmo para visualizar el arbol."}
           </CardDescription>
+          <div className="source-line">
+            <span
+              className={`source-chip ${
+                controller.lastRunSource === "example" ? "is-example" : controller.lastRunSource === "custom" ? "is-custom" : ""
+              }`}
+            >
+              {runSourceLabel}
+            </span>
+          </div>
         </CardHeader>
         <CardContent>
-          {!result ? (
+          {!controller.result ? (
             <p className="muted-note">Sin resultados aun.</p>
           ) : (
             <Tabs defaultValue="tree">
@@ -387,7 +236,7 @@ export function SimulatorPage() {
               </TabsList>
 
               <TabsContent value="tree">
-                <SearchTreeView result={result} />
+                <SearchTreeView result={controller.result} />
               </TabsContent>
 
               <TabsContent value="iterations">
@@ -403,13 +252,13 @@ export function SimulatorPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {result.iterations.map((iteration) => (
+                      {controller.result.iterations.map((iteration) => (
                         <tr key={iteration.iteration}>
                           <td>
                             <button
                               type="button"
                               className="table-select"
-                              onClick={() => setSelectedIteration(iteration.iteration)}
+                              onClick={() => controller.setSelectedIteration(iteration.iteration)}
                             >
                               #{iteration.iteration}
                             </button>
@@ -428,7 +277,7 @@ export function SimulatorPage() {
               </TabsContent>
 
               <TabsContent value="cost">
-                <RouteCostChart values={costSeries} />
+                <RouteCostChart values={controller.costSeries} />
               </TabsContent>
             </Tabs>
           )}
@@ -436,21 +285,15 @@ export function SimulatorPage() {
       </Card>
 
       <Dialog
-        open={edgeDialogOpen}
-        onOpenChange={(open) => {
-          setEdgeDialogOpen(open);
-          if (!open) {
-            setEdgeDialogTarget(null);
-            setPendingEdgeFromId(null);
-          }
-        }}
+        open={controller.edgeDialogOpen}
+        onOpenChange={controller.handleEdgeDialogOpenChange}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nueva conexion</DialogTitle>
             <DialogDescription>
-              {pendingEdgeFromId !== null && edgeDialogTarget !== null
-                ? `${pendingEdgeFromId} -> ${edgeDialogTarget}`
+              {controller.pendingEdgeFromId !== null && controller.edgeDialogTarget !== null
+                ? `${controller.pendingEdgeFromId} -> ${controller.edgeDialogTarget}`
                 : "Define peso y direccion"}
             </DialogDescription>
           </DialogHeader>
@@ -462,24 +305,24 @@ export function SimulatorPage() {
               id="edge-weight-input"
               type="number"
               min={1}
-              value={edgeWeightInput}
-              onChange={(event) => setEdgeWeightInput(event.target.value)}
+              value={controller.edgeWeightInput}
+              onChange={(event) => controller.setEdgeWeightInput(event.target.value)}
             />
 
             <label className="toggle-line light">
               <input
                 type="checkbox"
-                checked={edgeBidirectional}
-                onChange={(event) => setEdgeBidirectional(event.target.checked)}
+                checked={controller.edgeBidirectional}
+                onChange={(event) => controller.setEdgeBidirectional(event.target.checked)}
               />
               Bidireccional
             </label>
 
             <div className="inline-actions">
-              <Button variant="outline" onClick={() => setEdgeDialogOpen(false)}>
+              <Button variant="outline" onClick={() => controller.setEdgeDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={confirmEdgeCreation}>Guardar conexion</Button>
+              <Button onClick={controller.confirmEdgeCreation}>Guardar conexion</Button>
             </div>
           </div>
         </DialogContent>

@@ -1,19 +1,25 @@
 import { useMemo, useRef } from "react";
-import { directedEdgeKey, getRouteStepKeys } from "@/lib/hill-climbing";
+import { getRouteStepKeys } from "@/lib/hill-climbing";
+import {
+  clamp,
+  getCurveGeometry,
+  getEdgeCurvature,
+  mergeNodePositions,
+  NODE_RADIUS,
+  shouldHighlightEdge,
+  VIEWBOX_HEIGHT,
+  VIEWBOX_WIDTH,
+  type GraphPoint,
+} from "@/lib/graph-layout";
 import type { Route, WeightedGraph } from "@/lib/types";
 
 type EditorMode = "select" | "add-node" | "add-edge" | "delete";
-
-interface Position {
-  x: number;
-  y: number;
-}
 
 interface GraphCanvasProps {
   graph: WeightedGraph;
   activeRoute?: Route;
   title?: string;
-  nodePositions?: Record<number, Position>;
+  nodePositions?: Record<number, GraphPoint>;
   nodeLabels?: Record<number, string>;
   selectedNodeId?: number | null;
   pendingEdgeFromId?: number | null;
@@ -25,97 +31,7 @@ interface GraphCanvasProps {
   onPointerMove?: (x: number, y: number) => void;
   onPointerUp?: () => void;
   height?: number;
-}
-
-interface CurveGeometry {
-  fromX: number;
-  fromY: number;
-  toX: number;
-  toY: number;
-  controlX: number;
-  controlY: number;
-  path: string;
-  labelX: number;
-  labelY: number;
-}
-
-const VIEWBOX_WIDTH = 860;
-const VIEWBOX_HEIGHT = 520;
-const NODE_RADIUS = 26;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function getAutoPositions(nodes: number[]): Record<number, Position> {
-  if (nodes.length === 0) return {};
-  if (nodes.length === 1) return { [nodes[0]]: { x: VIEWBOX_WIDTH / 2, y: VIEWBOX_HEIGHT / 2 } };
-
-  const centerX = VIEWBOX_WIDTH / 2;
-  const centerY = VIEWBOX_HEIGHT / 2;
-  const radius = Math.min(210, 120 + nodes.length * 16);
-  const result: Record<number, Position> = {};
-
-  nodes.forEach((node, index) => {
-    const angle = (Math.PI * 2 * index) / nodes.length - Math.PI / 2;
-    result[node] = {
-      x: centerX + Math.cos(angle) * radius,
-      y: centerY + Math.sin(angle) * radius,
-    };
-  });
-
-  return result;
-}
-
-function hasDirectedReverse(graph: WeightedGraph, from: number, to: number): boolean {
-  return graph.edges.some((edge) => !edge.bidirectional && edge.from === to && edge.to === from);
-}
-
-function getCurveGeometry(
-  from: Position,
-  to: Position,
-  curvature: number,
-  radius = NODE_RADIUS,
-): CurveGeometry {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const length = Math.hypot(dx, dy) || 1;
-  const ux = dx / length;
-  const uy = dy / length;
-  const nx = -uy;
-  const ny = ux;
-
-  const fromX = from.x + ux * radius;
-  const fromY = from.y + uy * radius;
-  const toX = to.x - ux * radius;
-  const toY = to.y - uy * radius;
-
-  const midX = (fromX + toX) / 2;
-  const midY = (fromY + toY) / 2;
-  const controlX = midX + nx * curvature;
-  const controlY = midY + ny * curvature;
-
-  const t = 0.5;
-  const labelX = (1 - t) * (1 - t) * fromX + 2 * (1 - t) * t * controlX + t * t * toX;
-  const labelY = (1 - t) * (1 - t) * fromY + 2 * (1 - t) * t * controlY + t * t * toY;
-
-  return {
-    fromX,
-    fromY,
-    toX,
-    toY,
-    controlX,
-    controlY,
-    path: `M ${fromX} ${fromY} Q ${controlX} ${controlY} ${toX} ${toY}`,
-    labelX,
-    labelY,
-  };
-}
-
-function shouldHighlightEdge(edgeFrom: number, edgeTo: number, bidirectional: boolean, steps: Set<string>): boolean {
-  if (steps.has(directedEdgeKey(edgeFrom, edgeTo))) return true;
-  if (bidirectional && steps.has(directedEdgeKey(edgeTo, edgeFrom))) return true;
-  return false;
+  highlightTheme?: "start" | "progress" | "optimal" | "stop";
 }
 
 export function GraphCanvas({
@@ -134,22 +50,17 @@ export function GraphCanvas({
   onPointerMove,
   onPointerUp,
   height = VIEWBOX_HEIGHT,
+  highlightTheme = "progress",
 }: GraphCanvasProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const steps = activeRoute ? getRouteStepKeys(activeRoute) : new Set<string>();
 
-  const positions = useMemo(() => {
-    const base = getAutoPositions(graph.nodes);
-    if (!nodePositions) return base;
-    const merged: Record<number, Position> = {};
-    graph.nodes.forEach((node) => {
-      const custom = nodePositions[node];
-      merged[node] = custom ?? base[node];
-    });
-    return merged;
-  }, [graph.nodes, nodePositions]);
+  const positions = useMemo(
+    () => mergeNodePositions(graph.nodes, nodePositions),
+    [graph.nodes, nodePositions],
+  );
 
-  const toSvgPoint = (clientX: number, clientY: number): Position | null => {
+  const toSvgPoint = (clientX: number, clientY: number): GraphPoint | null => {
     const svg = svgRef.current;
     if (!svg) return null;
     const matrix = svg.getScreenCTM();
@@ -165,7 +76,7 @@ export function GraphCanvas({
   };
 
   return (
-    <div className={`graph-panel ${mode === "add-node" ? "is-add-mode" : ""}`}>
+    <div className={`graph-panel theme-${highlightTheme} ${mode === "add-node" ? "is-add-mode" : ""}`}>
       {title ? <p className="graph-title">{title}</p> : null}
       <svg
         ref={svgRef}
@@ -207,9 +118,7 @@ export function GraphCanvas({
           const to = positions[edge.to];
           if (!from || !to) return null;
 
-          const reverseDirected = hasDirectedReverse(graph, edge.from, edge.to);
-          const sign = edge.from < edge.to ? 1 : -1;
-          const curvature = edge.bidirectional ? 18 * sign : reverseDirected ? 36 * sign : 24 * sign;
+          const curvature = getEdgeCurvature(graph, edge.from, edge.to, edge.bidirectional);
           const geometry = getCurveGeometry(from, to, curvature);
           const highlighted = shouldHighlightEdge(edge.from, edge.to, edge.bidirectional, steps);
           const cls = highlighted ? "graph-edge graph-edge-active" : "graph-edge";
@@ -226,8 +135,19 @@ export function GraphCanvas({
                   if (onEdgeClick) onEdgeClick(edge.id);
                 }}
               />
-              <rect x={geometry.labelX - 20} y={geometry.labelY - 12} width={40} height={18} rx={6} className="graph-weight-bg" />
-              <text x={geometry.labelX} y={geometry.labelY - 0.5} className="graph-weight-text">
+              <rect
+                x={geometry.labelX - 20}
+                y={geometry.labelY - 12}
+                width={40}
+                height={18}
+                rx={6}
+                className={highlighted ? "graph-weight-bg is-active" : "graph-weight-bg"}
+              />
+              <text
+                x={geometry.labelX}
+                y={geometry.labelY - 0.5}
+                className={highlighted ? "graph-weight-text is-active" : "graph-weight-text"}
+              >
                 {edge.weight}
               </text>
             </g>
