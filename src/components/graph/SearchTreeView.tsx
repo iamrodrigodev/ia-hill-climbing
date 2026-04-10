@@ -29,6 +29,8 @@ export function SearchTreeView({
       : {},
   );
   const solutionRouteText = routeToString(result.solutionRoute);
+  const rootIsSolution =
+    routeToString(result.startRoute) === solutionRouteText && result.startCost === result.solutionCost;
   const summaryClass = summaryVariant === "text" ? "tree-result-text" : "tree-result-box";
   const treeShellClass = layoutVariant === "compact" ? "tree-shell compact" : "tree-shell";
 
@@ -46,7 +48,12 @@ export function SearchTreeView({
           <rect x="0" y="0" width={layout.width} height={layout.height} className="tree-bg" />
 
           <g>
-            <circle cx={layout.rootX} cy={layout.rootY} r={layout.nodeRadius} className="tree-node-circle is-root" />
+            <circle
+              cx={layout.rootX}
+              cy={layout.rootY}
+              r={layout.nodeRadius}
+              className={rootIsSolution ? "tree-node-circle is-solution" : "tree-node-circle is-root"}
+            />
             <text x={layout.rootX} y={layout.rootY - 8} className="tree-node-route">
               {routeToString(result.startRoute)}
             </text>

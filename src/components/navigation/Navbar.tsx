@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { to: "/", label: "Ejemplo" },
+  { to: "/", label: "Inicio" },
   { to: "/constructor", label: "Constructor" },
 ];
 
