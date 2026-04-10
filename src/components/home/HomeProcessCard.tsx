@@ -59,7 +59,7 @@ export function HomeProcessCard() {
                   </div>
                   <p className="best-line">
                     {homeContent.stepBlocks.bestNeighborPrefix} {rutaATexto(iteracion.bestNeighbor.route)} (
-                    {iteracion.bestNeighbor.cost}) {iteracion.moved ? "se mueve" : "sin mejora"}
+                    {iteracion.bestNeighbor.cost}). Costo actual F={iteracion.currentCost}. {iteracion.moved ? homeContent.stepBlocks.bestNeighborAction.moved : homeContent.stepBlocks.bestNeighborAction.stopped}
                   </p>
                 </article>
               ))}

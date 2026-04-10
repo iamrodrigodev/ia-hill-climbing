@@ -1,10 +1,12 @@
 export const homeContent = {
   hero: {
-    title: "Caso base del problema TSP",
+    title: "Caso base guiado del problema TSP",
     introPrefix: "Solución inicial",
     introMiddle: "con",
-    introSuffix: "Hill Climbing evalúa vecinos y termina en",
+    introSuffix: "Hill Climbing evalúa vecinos generados por swaps y termina en",
     introEnd: "con",
+    tspExplanation:
+      "Este es un ejemplo del Problema del Viajante de Comercio (TSP): visitar cada nodo una vez y regresar al punto de partida con el menor costo total.",
   },
   graphCard: {
     title: "Grafo del enunciado",
@@ -21,7 +23,7 @@ export const homeContent = {
   },
   processCard: {
     title: "Proceso paso a paso",
-    description: "Vecinos por iteración, selección y criterio de paro.",
+    description: "Avanza paso a paso para ver costos, vecinos y decisiones del algoritmo Hill Climbing.",
     tabs: {
       steps: "Pasos",
       iterations: "Iteraciones",
@@ -35,14 +37,18 @@ export const homeContent = {
     },
     two: {
       title: "2. Vecinos",
-      text: "En cada iteración se generan swaps y se toma el vecino de menor costo.",
+      text: "En cada iteración se generan vecinos intercambiando dos nodos en la ruta actual. Cada vecino recibe un costo total F y se elige el más bajo.",
     },
     three: {
       title: "3. Paro",
       prefix: "Se detiene en",
-      suffix: "porque ya no hay mejora estricta.",
+      suffix: "porque no existe un vecino con costo menor.",
     },
     bestNeighborPrefix: "Mejor vecino:",
+    bestNeighborAction: {
+      moved: "Se mueve porque hay mejora.",
+      stopped: "No se mueve porque no hay mejora.",
+    },
   },
 };
 
