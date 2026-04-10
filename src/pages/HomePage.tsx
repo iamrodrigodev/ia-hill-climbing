@@ -32,17 +32,18 @@ const baseLabels = { 0: "0", 1: "1", 2: "2", 3: "3" };
 function buildStages(): ExampleStage[] {
   const initialStage: ExampleStage = {
     title: "Estado inicial",
-    subtitle: "Presentacion del grafo base para empezar el ejemplo.",
+    subtitle: "Presentación del grafo base para empezar el ejemplo.",
     route: null,
     cost: null,
     neighbors: [],
-    decision: "Aqui solo observamos el grafo. Presiona Siguiente para comenzar con la Iteracion 1.",
+    decision: "Aquí solo observamos el grafo. Presiona Siguiente para comenzar con la Iteración 1.",
     tone: "start",
   };
 
   const runStages = baseRun.iterations.map((iteration, index) => {
     const currentText = routeToString(iteration.currentRoute);
     const bestText = routeToString(iteration.bestNeighbor.route);
+    const comparisonText = `${iteration.bestNeighbor.cost} ${iteration.bestNeighbor.cost < iteration.currentCost ? "<" : ">="} ${iteration.currentCost}`;
     const neighbors = iteration.neighbors.map((neighbor) => ({
       routeText: routeToString(neighbor.route),
       cost: neighbor.cost,
@@ -60,14 +61,14 @@ function buildStages(): ExampleStage[] {
           : "stop";
 
     return {
-      title: `Iteracion ${iteration.iteration}`,
+      title: `Iteración ${iteration.iteration}`,
       subtitle: `Ruta actual ${currentText} con F=${iteration.currentCost}`,
       route: iteration.currentRoute,
       cost: iteration.currentCost,
       neighbors,
       decision: iteration.moved
-        ? `Se elige ${bestText} con F=${iteration.bestNeighbor.cost}`
-        : `Se detiene porque no hay mejora estricta: el mejor vecino es ${bestText} con F=${iteration.bestNeighbor.cost} y la ruta actual ${currentText} tiene F=${iteration.currentCost}. Como ${iteration.bestNeighbor.cost} >= ${iteration.currentCost}, no se mueve (optimo local).`,
+        ? `Se elige ${bestText} porque es el menor costo entre los vecinos (F=${iteration.bestNeighbor.cost}) y mejora a la ruta actual ${currentText} (F=${iteration.currentCost}). Regla aplicada: ${comparisonText}, entonces sí se mueve.`
+        : `Se detiene porque no hay mejora estricta: el mejor vecino es ${bestText} con F=${iteration.bestNeighbor.cost} y la ruta actual ${currentText} tiene F=${iteration.currentCost}. Regla aplicada: ${comparisonText}, entonces no se mueve (óptimo local).`,
       tone,
     } satisfies ExampleStage;
   });
@@ -87,6 +88,16 @@ export function HomePage() {
   const [stageIndex, setStageIndex] = useState(0);
   const stage = stages[stageIndex];
   const showFinalAnswer = stageIndex === stages.length - 1 || stage.tone === "stop";
+  const treeIterationsToShow = Math.max(0, stageIndex);
+  const treeResultForStage = useMemo(
+    () => ({
+      ...baseRun,
+      iterations: baseRun.iterations.slice(0, treeIterationsToShow),
+      solutionRoute: showFinalAnswer ? baseRun.solutionRoute : [],
+      solutionCost: showFinalAnswer ? baseRun.solutionCost : Number.NaN,
+    }),
+    [showFinalAnswer, treeIterationsToShow],
+  );
 
   return (
     <div className="container page-stack">
@@ -147,7 +158,7 @@ export function HomePage() {
                   <table className="data-table cost-table">
                     <thead>
                       <tr>
-                        <th>Conexion</th>
+                        <th>Conexión</th>
                         <th>Costo</th>
                       </tr>
                     </thead>
@@ -166,7 +177,7 @@ export function HomePage() {
               </div>
 
               <div className="case-mini-card compact">
-                <h4>Que esta pasando?</h4>
+                <h4>¿Qué está pasando?</h4>
                 <p>
                   Ruta actual: <code>{stage.route ? routeToString(stage.route) : "-"}</code> -{" "}
                   <code>F={stage.cost ?? "-"}</code>
@@ -193,7 +204,7 @@ export function HomePage() {
           </section>
 
           <section className="neighbors-inline">
-            <h4>Vecinos evaluados en esta iteracion</h4>
+            <h4>Vecinos evaluados en esta iteración</h4>
             <div className="neighbor-pills">
               {stage.neighbors.length > 0 ? (
                 stage.neighbors.map((neighbor, index) => (
@@ -205,25 +216,30 @@ export function HomePage() {
                   </span>
                 ))
               ) : (
-                <span className="neighbor-pill">Aun sin vecinos (Paso 0).</span>
+                <span className="neighbor-pill">Aún sin vecinos (Paso 0).</span>
               )}
             </div>
             <div className="inline-actions">
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="primary" size="sm">
-                    Ver arbol completo
+                    Ver árbol completo
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="tree-modal-content">
                   <DialogHeader>
-                    <DialogTitle>Arbol de busqueda del caso base</DialogTitle>
+                    <DialogTitle>Árbol de búsqueda del caso base</DialogTitle>
                     <DialogDescription>
-                      Visualizacion completa del recorrido para el caso base. Salida exitosa: X=[
-                      {baseRun.solutionRoute.join(",")}], F={baseRun.solutionCost}.
+                      {showFinalAnswer
+                        ? `Visualización completa del recorrido para el caso base. Salida exitosa: X=[${baseRun.solutionRoute.join(",")}], F=${baseRun.solutionCost}.`
+                        : `Árbol construido hasta la iteración actual (${treeIterationsToShow}). La salida final se muestra al llegar al paso de paro.`}
                     </DialogDescription>
                   </DialogHeader>
-                  <SearchTreeView result={baseRun} summaryVariant="none" layoutVariant="compact" />
+                  {treeIterationsToShow === 0 ? (
+                    <p className="muted-note">Aún no hay iteraciones en el árbol. Avanza al siguiente paso.</p>
+                  ) : (
+                    <SearchTreeView result={treeResultForStage} summaryVariant="none" layoutVariant="compact" />
+                  )}
                 </DialogContent>
               </Dialog>
             </div>

@@ -48,7 +48,7 @@ export function HomeProcessCard() {
               {baseRun.iterations.map((iteration) => (
                 <article key={iteration.iteration} className="iteration-block">
                   <h3>
-                    Iteracion {iteration.iteration}: {routeToString(iteration.currentRoute)} (F={iteration.currentCost})
+                    Iteración {iteration.iteration}: {routeToString(iteration.currentRoute)} (F={iteration.currentCost})
                   </h3>
                   <div className="neighbor-list">
                     {iteration.neighbors.map((neighbor, index) => (
