@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, MousePointer2, Play, PlusCircle, Share2, Tra
 import * as Label from "@radix-ui/react-label";
 import { rutaATexto } from "@/lib/hill-climbing";
 import { baseGraph, baseRun } from "@/lib/mock-data";
+import { homeContent } from "@/lib/home-content";
 import { useControladorSimulador } from "@/lib/use-simulator-controller";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { SearchTreeView } from "@/components/graph/SearchTreeView";
@@ -254,6 +255,9 @@ export function HomePage() {
                 <CardDescription>
                   Avanza paso a paso para ver costos, vecinos y decisiones del algoritmo.
                 </CardDescription>
+                <p className="case-note">
+                  {homeContent.hero.algorithmExplanation}
+                </p>
               </div>
               <div className="stepper-controls">
                 <Button

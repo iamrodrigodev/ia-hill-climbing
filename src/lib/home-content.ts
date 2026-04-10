@@ -5,10 +5,8 @@ export const homeContent = {
     introMiddle: "con",
     introSuffix: "Hill Climbing evalúa vecinos generados por swaps y termina en",
     introEnd: "con",
-    tspExplanation:
-      "Este ejemplo muestra el Problema del Viajante de Comercio (TSP): visitar cada nodo exactamente una vez y volver al inicio con el menor costo posible.",
     algorithmExplanation:
-      "El algoritmo Hill Climbing es una búsqueda local: parte de una ruta inicial y prueba intercambiar pares de nodos para reducir el costo total. Si encuentra un vecino mejor, lo adopta; si no, se detiene en un óptimo local.",
+      "Hill Climbing prueba swaps en una ruta abierta y adopta vecinos con menor costo hasta un óptimo local.",
   },
   graphCard: {
     title: "Grafo del enunciado",
@@ -35,7 +33,7 @@ export const homeContent = {
   stepBlocks: {
     one: {
       title: "1. Inicio",
-      prefix: "Estado inicial y objetivo: visitar todos los nodos una vez y regresar al inicio.",
+      prefix: "Estado inicial: la ruta actual se evalúa sumando aristas consecutivas.",
     },
     two: {
       title: "2. Vecinos",
