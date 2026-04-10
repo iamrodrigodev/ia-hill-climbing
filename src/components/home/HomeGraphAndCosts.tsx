@@ -1,5 +1,5 @@
 import { homeContent, homeGraphLabels, homeGraphPositions } from "@/lib/home-content";
-import { baseGraph, baseRun } from "@/lib/mock-data";
+import { corridaBase, grafoBase } from "@/lib/mock-data";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -13,12 +13,12 @@ export function HomeGraphAndCosts() {
         </CardHeader>
         <CardContent>
           <GraphCanvas
-            graph={baseGraph}
-            activeRoute={baseRun.startRoute}
-            nodePositions={homeGraphPositions}
-            nodeLabels={homeGraphLabels}
-            title={homeContent.graphCard.graphTitle}
-            height={420}
+            grafo={grafoBase}
+            rutaActiva={corridaBase.startRoute}
+            posicionesNodos={homeGraphPositions}
+            etiquetasNodos={homeGraphLabels}
+            titulo={homeContent.graphCard.graphTitle}
+            altura={420}
           />
         </CardContent>
       </Card>
@@ -38,7 +38,7 @@ export function HomeGraphAndCosts() {
                 </tr>
               </thead>
               <tbody>
-                {baseGraph.edges.map((edge) => (
+                {grafoBase.edges.map((edge) => (
                   <tr key={edge.id}>
                     <td>
                       {edge.from} {"<->"} {edge.to}

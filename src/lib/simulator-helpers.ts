@@ -57,11 +57,3 @@ export const POSICIONES_BASE: Record<number, Punto> = {
   3: { x: 260, y: 300 },
 };
 
-// Alias de compatibilidad temporal.
-export type Point = Punto;
-export const nextNodeId = siguienteIdNodo;
-export const formatDefaultRoute = formatearRutaPorDefecto;
-export const parseIterations = parsearIteraciones;
-export const removeNode = eliminarNodo;
-export const upsertEdge = agregarOActualizarArista;
-export const BASE_POSITIONS = POSICIONES_BASE;

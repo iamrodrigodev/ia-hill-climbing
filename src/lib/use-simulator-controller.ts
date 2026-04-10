@@ -8,7 +8,7 @@ import {
   parsearRuta,
   rutaATexto,
 } from "@/lib/hill-climbing";
-import { presets } from "@/lib/mock-data";
+import { preajustes } from "@/lib/mock-data";
 import {
   POSICIONES_BASE,
   agregarOActualizarArista,
@@ -18,7 +18,7 @@ import {
   type Punto,
 } from "@/lib/simulator-helpers";
 import type { GrafoPonderado, ResultadoEscalada, Ruta } from "@/lib/types";
-import type { EditorMode } from "@/components/graph/GraphCanvas";
+import type { ModoEditor } from "@/components/graph/GraphCanvas";
 
 export type FuenteEscenario = "example" | "custom";
 const MAXIMO_INTERNO_ITERACIONES = 1000;
@@ -76,7 +76,7 @@ export function useControladorSimulador() {
   const [grafo, setGrafo] = useState<GrafoPonderado>({ nodes: [], edges: [] });
   const [posiciones, setPosiciones] = useState<Record<number, Punto>>({});
   const [etiquetas, setEtiquetas] = useState<Record<number, string>>({});
-  const [modoEditor, setModoEditor] = useState<EditorMode>("select");
+  const [modoEditor, setModoEditor] = useState<ModoEditor>("select");
   const [idNodoSeleccionado, setIdNodoSeleccionado] = useState<number | null>(null);
   const [idNodoOrigenPendiente, setIdNodoOrigenPendiente] = useState<number | null>(null);
   const [idNodoArrastrando, setIdNodoArrastrando] = useState<number | null>(null);
@@ -120,7 +120,7 @@ export function useControladorSimulador() {
     [grafo.nodes, etiquetas],
   );
 
-  const fijarModoEditor = (siguienteModo: EditorMode) => {
+  const fijarModoEditor = (siguienteModo: ModoEditor) => {
     setModoEditor(siguienteModo);
     if (siguienteModo !== "add-edge") setIdNodoOrigenPendiente(null);
     if (siguienteModo !== "select") setIdNodoSeleccionado(null);
@@ -339,7 +339,7 @@ export function useControladorSimulador() {
   };
 
   const cargarCasoBase = () => {
-    const preajuste = presets.find((item) => item.id === "base") ?? presets[0];
+    const preajuste = preajustes.find((item) => item.id === "base") ?? preajustes[0];
     const escenario = clonarGrafo(preajuste.graph);
     const etiquetasIniciales: Record<number, string> = {};
     escenario.nodes.forEach((nodo) => {
@@ -365,7 +365,6 @@ export function useControladorSimulador() {
   };
 
   return {
-    // Nombres en español
     grafo,
     posiciones,
     etiquetas,
@@ -390,6 +389,7 @@ export function useControladorSimulador() {
     manejarCambioDialogoNodo,
     modoEtiquetaNodo,
     setModoEtiquetaNodo,
+    hayNodosNumericos,
     rutaActiva,
     vistaPreviaRutaAutomatica,
     serieCostos,
@@ -416,60 +416,7 @@ export function useControladorSimulador() {
     aplicarRutaAutomatica,
     setPosiciones,
 
-    // Alias de compatibilidad temporal
-    graph: grafo,
-    positions: posiciones,
-    labels: etiquetas,
-    mode: modoEditor,
-    selectedNodeId: idNodoSeleccionado,
-    pendingEdgeFromId: idNodoOrigenPendiente,
-    draggingNodeId: idNodoArrastrando,
-    routeInput: entradaRuta,
-    maxIterationsInput: entradaMaxIteraciones,
-    result: resultado,
-    selectedIteration: iteracionSeleccionada,
-    graphSource: fuenteEscenario,
-    lastRunSource: fuenteUltimaEjecucion,
-    edgeDialogOpen: dialogoAristaAbierto,
-    edgeDialogTarget: objetivoDialogoArista,
-    edgeWeightInput: entradaPesoArista,
-    edgeBidirectional: aristaBidireccional,
-    activeRoute: rutaActiva,
-    autoRoutePreview: vistaPreviaRutaAutomatica,
-    costSeries: serieCostos,
-    setRouteInput: setEntradaRuta,
-    setMaxIterationsInput: setEntradaMaxIteraciones,
-    setSelectedIteration: setIteracionSeleccionada,
-    setEdgeWeightInput: setEntradaPesoArista,
-    setEdgeBidirectional: setAristaBidireccional,
-    setLabels: setEtiquetas,
-    setDraggingNodeId: setIdNodoArrastrando,
-    setEdgeDialogOpen: setDialogoAristaAbierto,
-    handleEdgeDialogOpenChange: manejarCambioDialogoArista,
-    setCityNameInput: setEntradaNombreNodo,
-    setEditorMode: fijarModoEditor,
-    nodeLabelMode: modoEtiquetaNodo,
-    setNodeLabelMode: setModoEtiquetaNodo,
-    hasNumericNodes: hayNodosNumericos,
-    handleCanvasClick: manejarClicEnLienzo,
-    handleNodeClick: manejarClicEnNodo,
-    handleEdgeClick: manejarClicEnArista,
-    confirmEdgeCreation: confirmarCreacionArista,
-    runAlgorithm: ejecutarAlgoritmo,
-    runAlgorithmWithRoute: ejecutarConRuta,
-    runAlgorithmAuto: ejecutarAlgoritmoAuto,
-    clearAll: limpiarTodo,
-    loadBaseCase: cargarCasoBase,
-    applyAutoRoute: aplicarRutaAutomatica,
-    setPositions: setPosiciones,
-    addNodeDialogOpen: dialogoNodoAbierto,
-    cityNameInput: entradaNombreNodo,
-    pendingNodePosition: posicionNodoPendiente,
-    confirmNodeCreation: confirmarCreacionNodo,
-    handleNodeDialogOpenChange: manejarCambioDialogoNodo,
   };
 }
 
-export const useSimulatorController = useControladorSimulador;
 export const useControladorDelSimulador = useControladorSimulador;
-export type ScenarioSource = FuenteEscenario;

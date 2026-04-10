@@ -47,12 +47,3 @@ export interface PreajusteGrafo {
   defaultRoute: Ruta;
 }
 
-// Aliases de compatibilidad temporal.
-export type NodeId = IdNodo;
-export type Route = Ruta;
-export type GraphEdge = AristaGrafo;
-export type WeightedGraph = GrafoPonderado;
-export type NeighborCandidate = CandidatoVecino;
-export type HillClimbIteration = IteracionEscalada;
-export type HillClimbResult = ResultadoEscalada;
-export type GraphPreset = PreajusteGrafo;

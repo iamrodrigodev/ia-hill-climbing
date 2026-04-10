@@ -107,9 +107,3 @@ export function obtenerClaseNodoArbol(
   return "tree-node-circle";
 }
 
-// Alias de compatibilidad temporal.
-export type TreeLayoutConfig = ConfiguracionDisenoArbol;
-export type TreeLayerLayout = CapaDisenoArbol;
-export type TreeLayout = DisenoArbol;
-export const buildTreeLayout = construirDisenoArbol;
-export const getTreeNodeClass = obtenerClaseNodoArbol;

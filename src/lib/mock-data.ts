@@ -51,13 +51,3 @@ export const textoEsperadoCasoBase = {
   costoOptimoLocal: corridaBase.solutionCost,
 };
 
-// Alias de compatibilidad temporal.
-export const baseGraph = grafoBase;
-export const presets = preajustes;
-export const baseRun = corridaBase;
-export const baseCaseExpectedText = {
-  startRoute: textoEsperadoCasoBase.rutaInicio,
-  startCost: textoEsperadoCasoBase.costoInicio,
-  bestLocalRoute: textoEsperadoCasoBase.rutaOptimoLocal,
-  bestLocalCost: textoEsperadoCasoBase.costoOptimoLocal,
-};

@@ -131,16 +131,3 @@ export function debeResaltarArista(
   return false;
 }
 
-// Alias de compatibilidad temporal.
-export type GraphPoint = PuntoGrafo;
-export type CurveGeometry = GeometriaCurva;
-export const VIEWBOX_WIDTH = ANCHO_VIEWBOX;
-export const VIEWBOX_HEIGHT = ALTO_VIEWBOX;
-export const NODE_RADIUS = RADIO_NODO;
-export const clamp = limitar;
-export const getAutoPositions = obtenerPosicionesAutomaticas;
-export const mergeNodePositions = unirPosicionesNodos;
-export const hasDirectedReverse = tieneReversaDirigida;
-export const getEdgeCurvature = obtenerCurvaturaArista;
-export const getCurveGeometry = obtenerGeometriaCurva;
-export const shouldHighlightEdge = debeResaltarArista;

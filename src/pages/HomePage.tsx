@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, MousePointer2, Play, PlusCircle, Share2, Trash2 } from "lucide-react";
 import * as Label from "@radix-ui/react-label";
 import { rutaATexto } from "@/lib/hill-climbing";
-import { baseGraph, baseRun } from "@/lib/mock-data";
+import { corridaBase, grafoBase } from "@/lib/mock-data";
 import { homeContent } from "@/lib/home-content";
 import { useControladorSimulador } from "@/lib/use-simulator-controller";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
@@ -52,7 +52,7 @@ function construirEtapas(): EtapaEjemplo[] {
     tone: "start",
   };
 
-  const etapasEjecucion = baseRun.iterations.map((iteration, index) => {
+  const etapasEjecucion = corridaBase.iterations.map((iteration, index) => {
     const currentText = rutaATexto(iteration.currentRoute);
     const bestText = rutaATexto(iteration.bestNeighbor.route);
     const comparisonText = `${iteration.bestNeighbor.cost} ${
@@ -69,7 +69,7 @@ function construirEtapas(): EtapaEjemplo[] {
       index === 0
         ? "start"
         : iteration.moved
-          ? iteration.bestNeighbor.cost === baseRun.solutionCost
+          ? iteration.bestNeighbor.cost === corridaBase.solutionCost
             ? "optimal"
             : "progress"
           : "stop";
@@ -102,61 +102,61 @@ export function HomePage() {
   const isConstructorMode = location.pathname !== "/";
   const controlador = useControladorSimulador();
 
-  const stages = useMemo(construirEtapas, []);
-  const [stageIndex, setStageIndex] = useState(0);
-  const [edgeWeightError, setEdgeWeightError] = useState("");
-  const [constructorRunStep, setConstructorRunStep] = useState(0);
-  const [exampleMoveEnabled, setExampleMoveEnabled] = useState(false);
-  const [exampleDraggingNodeId, setExampleDraggingNodeId] = useState<number | null>(null);
-  const [examplePositions, setExamplePositions] = useState(() => ({
+  const etapas = useMemo(construirEtapas, []);
+  const [indiceEtapa, setIndiceEtapa] = useState(0);
+  const [errorPesoArista, setErrorPesoArista] = useState("");
+  const [pasoConstructor, setPasoConstructor] = useState(0);
+  const [movimientoEjemploHabilitado, setMovimientoEjemploHabilitado] = useState(false);
+  const [idNodoArrastrandoEjemplo, setIdNodoArrastrandoEjemplo] = useState<number | null>(null);
+  const [posicionesEjemplo, setPosicionesEjemplo] = useState(() => ({
     0: { ...posicionesBase[0] },
     1: { ...posicionesBase[1] },
     2: { ...posicionesBase[2] },
     3: { ...posicionesBase[3] },
   }));
-  const stage = stages[stageIndex];
+  const etapa = etapas[indiceEtapa];
 
   const hasAtLeastOneNode = controlador.grafo.nodes.length > 0;
   const hasAtLeastTwoNodes = controlador.grafo.nodes.length > 1;
 
-  const showFinalAnswer = stageIndex === stages.length - 1 || stage.tone === "stop";
-  const treeIterationsToShow = Math.max(0, stageIndex);
-  const treeResultForStage = useMemo(
+  const mostrarRespuestaFinal = indiceEtapa === etapas.length - 1 || etapa.tone === "stop";
+  const iteracionesArbolAMostrar = Math.max(0, indiceEtapa);
+  const resultadoArbolPorEtapa = useMemo(
     () => ({
-      ...baseRun,
-      iterations: baseRun.iterations.slice(0, treeIterationsToShow),
-      solutionRoute: showFinalAnswer ? baseRun.solutionRoute : [],
-      solutionCost: showFinalAnswer ? baseRun.solutionCost : Number.NaN,
+      ...corridaBase,
+      iterations: corridaBase.iterations.slice(0, iteracionesArbolAMostrar),
+      solutionRoute: mostrarRespuestaFinal ? corridaBase.solutionRoute : [],
+      solutionCost: mostrarRespuestaFinal ? corridaBase.solutionCost : Number.NaN,
     }),
-    [showFinalAnswer, treeIterationsToShow],
+    [mostrarRespuestaFinal, iteracionesArbolAMostrar],
   );
 
   useEffect(() => {
-    setConstructorRunStep(0);
+    setPasoConstructor(0);
   }, [controlador.resultado]);
 
-  const constructorTotalSteps = controlador.resultado ? controlador.resultado.iterations.length + 1 : 1;
-  const constructorRunLabel = constructorRunStep === 0 ? "Inicio" : `Iteración ${constructorRunStep}`;
-  const constructorShowFinal = !!controlador.resultado && constructorRunStep === constructorTotalSteps - 1;
-  const constructorTreeResult = useMemo(() => {
+  const pasosConstructorTotales = controlador.resultado ? controlador.resultado.iterations.length + 1 : 1;
+  const etiquetaPasoConstructor = pasoConstructor === 0 ? "Inicio" : `Iteración ${pasoConstructor}`;
+  const mostrarFinalConstructor = !!controlador.resultado && pasoConstructor === pasosConstructorTotales - 1;
+  const resultadoArbolConstructor = useMemo(() => {
     if (!controlador.resultado) return null;
     return {
       ...controlador.resultado,
-      iterations: controlador.resultado.iterations.slice(0, constructorRunStep),
-      solutionRoute: constructorShowFinal ? controlador.resultado.solutionRoute : [],
-      solutionCost: constructorShowFinal ? controlador.resultado.solutionCost : Number.NaN,
+      iterations: controlador.resultado.iterations.slice(0, pasoConstructor),
+      solutionRoute: mostrarFinalConstructor ? controlador.resultado.solutionRoute : [],
+      solutionCost: mostrarFinalConstructor ? controlador.resultado.solutionCost : Number.NaN,
     };
-  }, [constructorRunStep, constructorShowFinal, controlador.resultado]);
+  }, [pasoConstructor, mostrarFinalConstructor, controlador.resultado]);
 
-  const constructorActiveRoute = useMemo(() => {
+  const rutaActivaConstructor = useMemo(() => {
     if (!controlador.resultado) return controlador.rutaActiva;
-    if (constructorRunStep === 0) return undefined;
-    return controlador.resultado.iterations[constructorRunStep - 1]?.currentRoute;
-  }, [constructorRunStep, controlador.rutaActiva, controlador.resultado]);
+    if (pasoConstructor === 0) return undefined;
+    return controlador.resultado.iterations[pasoConstructor - 1]?.currentRoute;
+  }, [pasoConstructor, controlador.rutaActiva, controlador.resultado]);
 
-  const constructorStatus = !controlador.resultado
+  const estadoConstructor = !controlador.resultado
     ? controlador.modoEditor === "add-node"
-      ? controlador.nodeLabelMode === "city"
+      ? controlador.modoEtiquetaNodo === "city"
         ? "Haz clic sobre el lienzo para crear un nodo de ciudad."
         : "Haz clic sobre el lienzo para crear nodos numéricos."
       : controlador.modoEditor === "add-edge"
@@ -166,10 +166,10 @@ export function HomePage() {
         : controlador.modoEditor === "delete"
           ? "Haz clic en un nodo o conexión para eliminar."
           : "Modo mover activo. También puedes ejecutar el algoritmo cuando tengas un grafo válido."
-    : constructorRunStep === 0
+    : pasoConstructor === 0
       ? `Inicio del cálculo: ruta inicial ${rutaATexto(controlador.resultado.startRoute)} con F=${controlador.resultado.startCost}.`
       : (() => {
-          const iteration = controlador.resultado.iterations[constructorRunStep - 1];
+          const iteration = controlador.resultado.iterations[pasoConstructor - 1];
           if (!iteration) return "Resultado generado.";
           const currentText = rutaATexto(iteration.currentRoute);
           const bestText = rutaATexto(iteration.bestNeighbor.route);
@@ -181,18 +181,18 @@ export function HomePage() {
             : `Iteración ${iteration.iteration}: se detiene porque ${comparison} (sin mejora estricta).`;
         })();
 
-  const handleConfirmEdgeCreation = () => {
-    const normalizedWeight = controlador.entradaPesoArista.trim();
-    if (!normalizedWeight) {
-      setEdgeWeightError("El peso es obligatorio.");
+  const manejarConfirmacionCreacionArista = () => {
+    const pesoNormalizado = controlador.entradaPesoArista.trim();
+    if (!pesoNormalizado) {
+      setErrorPesoArista("El peso es obligatorio.");
       return;
     }
-    const parsedWeight = Number(normalizedWeight);
-    if (!Number.isFinite(parsedWeight) || parsedWeight <= 0) {
-      setEdgeWeightError("Ingresa un peso mayor que 0.");
+    const pesoParseado = Number(pesoNormalizado);
+    if (!Number.isFinite(pesoParseado) || pesoParseado <= 0) {
+      setErrorPesoArista("Ingresa un peso mayor que 0.");
       return;
     }
-    setEdgeWeightError("");
+    setErrorPesoArista("");
     controlador.confirmarCreacionArista();
   };
 
@@ -256,9 +256,9 @@ export function HomePage() {
                 <select
                   id="node-label-mode"
                   className="ui-input"
-                  value={controlador.nodeLabelMode}
-                  onChange={(event) => controlador.setNodeLabelMode(event.target.value as "numeric" | "city")}
-                  disabled={controlador.modoEditor === "add-node" || controlador.hasNumericNodes}
+                  value={controlador.modoEtiquetaNodo}
+                  onChange={(event) => controlador.setModoEtiquetaNodo(event.target.value as "numeric" | "city")}
+                  disabled={controlador.modoEditor === "add-node" || controlador.hayNodosNumericos}
                 >
                   <option value="numeric">Número</option>
                   <option value="city">Ciudad</option>
@@ -278,9 +278,9 @@ export function HomePage() {
               </div>
               <div className="stepper-controls">
                 <Button
-                  variant={exampleMoveEnabled ? "secondary" : "primary"}
+                  variant={movimientoEjemploHabilitado ? "secondary" : "primary"}
                   size="sm"
-                  onClick={() => setExampleMoveEnabled((prev) => !prev)}
+                  onClick={() => setMovimientoEjemploHabilitado((prev) => !prev)}
                 >
                   <MousePointer2 size={14} />
                   Mover
@@ -288,20 +288,20 @@ export function HomePage() {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => setStageIndex((prev) => Math.max(0, prev - 1))}
-                  disabled={stageIndex === 0}
+                  onClick={() => setIndiceEtapa((prev) => Math.max(0, prev - 1))}
+                  disabled={indiceEtapa === 0}
                 >
                   <ChevronLeft size={14} />
                   Anterior
                 </Button>
-                <span className={`step-badge tone-${stage.tone}`}>
-                  {etiquetaTono(stage.tone)} - {stageIndex + 1}/{stages.length}
+                <span className={`step-badge tone-${etapa.tone}`}>
+                  {etiquetaTono(etapa.tone)} - {indiceEtapa + 1}/{etapas.length}
                 </span>
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => setStageIndex((prev) => Math.min(stages.length - 1, prev + 1))}
-                  disabled={stageIndex === stages.length - 1}
+                  onClick={() => setIndiceEtapa((prev) => Math.min(etapas.length - 1, prev + 1))}
+                  disabled={indiceEtapa === etapas.length - 1}
                 >
                   Siguiente
                   <ChevronRight size={14} />
@@ -314,56 +314,56 @@ export function HomePage() {
         <CardContent className="case-interactive-content">
           <section className="case-grid">
             <article className="case-graph-block">
-              <h3>{isConstructorMode ? "Lienzo del constructor" : stage.title}</h3>
+              <h3>{isConstructorMode ? "Lienzo del constructor" : etapa.title}</h3>
               <p>
                 {isConstructorMode
                   ? "El lienzo empieza vacío. Construye nodos y conexiones directamente aquí."
-                  : stage.subtitle}
+                  : etapa.subtitle}
               </p>
               {isConstructorMode ? (
                 <GraphCanvas
-                  graph={controlador.grafo}
-                  activeRoute={constructorActiveRoute}
-                  nodePositions={controlador.posiciones}
-                  nodeLabels={controlador.etiquetas}
-                  selectedNodeId={controlador.idNodoSeleccionado}
-                  pendingEdgeFromId={controlador.idNodoOrigenPendiente}
-                  mode={controlador.modoEditor}
-                  onCanvasClick={controlador.manejarClicEnLienzo}
-                  onNodeClick={controlador.manejarClicEnNodo}
-                  onEdgeClick={controlador.manejarClicEnArista}
-                  onNodePointerDown={(nodeId) => {
+                  grafo={controlador.grafo}
+                  rutaActiva={rutaActivaConstructor}
+                  posicionesNodos={controlador.posiciones}
+                  etiquetasNodos={controlador.etiquetas}
+                  idNodoSeleccionado={controlador.idNodoSeleccionado}
+                  idOrigenAristaPendiente={controlador.idNodoOrigenPendiente}
+                  modo={controlador.modoEditor}
+                  onClickLienzo={controlador.manejarClicEnLienzo}
+                  onClickNodo={controlador.manejarClicEnNodo}
+                  onClickArista={controlador.manejarClicEnArista}
+                  onPresionarNodo={(nodeId) => {
                     if (controlador.modoEditor === "select") controlador.setIdNodoArrastrando(nodeId);
                   }}
-                  onPointerMove={(x, y) => {
+                  onMovimientoPuntero={(x, y) => {
                     if (controlador.idNodoArrastrando === null || controlador.modoEditor !== "select") return;
                     controlador.setPosiciones((prev) => ({ ...prev, [controlador.idNodoArrastrando!]: { x, y } }));
                   }}
-                  onPointerUp={() => {
+                  onSoltarPuntero={() => {
                     if (controlador.idNodoArrastrando !== null) controlador.setIdNodoArrastrando(null);
                   }}
-                  height={450}
+                  altura={450}
                 />
               ) : (
                 <GraphCanvas
-                  graph={baseGraph}
-                  activeRoute={stage.route ?? undefined}
-                  nodePositions={examplePositions}
-                  nodeLabels={etiquetasBase}
-                  selectedNodeId={exampleDraggingNodeId}
-                  highlightTheme={stage.tone}
-                  onNodePointerDown={(nodeId) => {
-                    if (!exampleMoveEnabled) return;
-                    setExampleDraggingNodeId(nodeId);
+                  grafo={grafoBase}
+                  rutaActiva={etapa.route ?? undefined}
+                  posicionesNodos={posicionesEjemplo}
+                  etiquetasNodos={etiquetasBase}
+                  idNodoSeleccionado={idNodoArrastrandoEjemplo}
+                  temaResaltado={etapa.tone}
+                  onPresionarNodo={(nodeId) => {
+                    if (!movimientoEjemploHabilitado) return;
+                    setIdNodoArrastrandoEjemplo(nodeId);
                   }}
-                  onPointerMove={(x, y) => {
-                    if (!exampleMoveEnabled || exampleDraggingNodeId === null) return;
-                    setExamplePositions((prev) => ({ ...prev, [exampleDraggingNodeId]: { x, y } }));
+                  onMovimientoPuntero={(x, y) => {
+                    if (!movimientoEjemploHabilitado || idNodoArrastrandoEjemplo === null) return;
+                    setPosicionesEjemplo((prev) => ({ ...prev, [idNodoArrastrandoEjemplo]: { x, y } }));
                   }}
-                  onPointerUp={() => {
-                    if (exampleDraggingNodeId !== null) setExampleDraggingNodeId(null);
+                  onSoltarPuntero={() => {
+                    if (idNodoArrastrandoEjemplo !== null) setIdNodoArrastrandoEjemplo(null);
                   }}
-                  height={450}
+                  altura={450}
                 />
               )}
             </article>
@@ -374,22 +374,22 @@ export function HomePage() {
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => setConstructorRunStep((prev) => Math.max(0, prev - 1))}
-                    disabled={constructorRunStep === 0}
+                    onClick={() => setPasoConstructor((prev) => Math.max(0, prev - 1))}
+                    disabled={pasoConstructor === 0}
                   >
                     <ChevronLeft size={14} />
                     Anterior
                   </Button>
                   <span className="step-badge tone-start">
-                    {constructorRunLabel} - {constructorRunStep + 1}/{constructorTotalSteps}
+                    {etiquetaPasoConstructor} - {pasoConstructor + 1}/{pasosConstructorTotales}
                   </span>
                   <Button
                     variant="primary"
                     size="sm"
                     onClick={() =>
-                      setConstructorRunStep((prev) => Math.min(constructorTotalSteps - 1, prev + 1))
+                      setPasoConstructor((prev) => Math.min(pasosConstructorTotales - 1, prev + 1))
                     }
-                    disabled={constructorRunStep === constructorTotalSteps - 1}
+                    disabled={pasoConstructor === pasosConstructorTotales - 1}
                   >
                     Siguiente
                     <ChevronRight size={14} />
@@ -408,8 +408,8 @@ export function HomePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(isConstructorMode ? controlador.grafo.edges : baseGraph.edges).length > 0 ? (
-                        (isConstructorMode ? controlador.grafo.edges : baseGraph.edges).map((edge) => (
+                      {(isConstructorMode ? controlador.grafo.edges : grafoBase.edges).length > 0 ? (
+                        (isConstructorMode ? controlador.grafo.edges : grafoBase.edges).map((edge) => (
                           <tr key={edge.id}>
                             <td>
                               {edge.from} {edge.bidirectional ? "\u2194" : "\u2192"} {edge.to}
@@ -430,14 +430,14 @@ export function HomePage() {
               <div className="case-mini-card compact">
                 <h4>¿Qué está pasando?</h4>
                 {isConstructorMode ? (
-                  <p>{constructorStatus}</p>
+                  <p>{estadoConstructor}</p>
                 ) : (
                   <>
                     <p>
-                      Ruta actual: <code>{stage.route ? rutaATexto(stage.route) : "-"}</code> -{" "}
-                      <code>F={stage.cost ?? "-"}</code>
+                      Ruta actual: <code>{etapa.route ? rutaATexto(etapa.route) : "-"}</code> -{" "}
+                      <code>F={etapa.cost ?? "-"}</code>
                     </p>
-                    <p>{stage.decision}</p>
+                    <p>{etapa.decision}</p>
                   </>
                 )}
               </div>
@@ -467,13 +467,13 @@ export function HomePage() {
               ) : (
                 <div className="case-mini-card compact final-answer">
                   <h4>Respuesta final</h4>
-                  {showFinalAnswer ? (
+                  {mostrarRespuestaFinal ? (
                     <>
                       <p>
-                        X = <strong>[{baseRun.solutionRoute.join(",")}]</strong>
+                        X = <strong>[{corridaBase.solutionRoute.join(",")}]</strong>
                       </p>
                       <p>
-                        F = <strong>{baseRun.solutionCost}</strong>
+                        F = <strong>{corridaBase.solutionCost}</strong>
                       </p>
                     </>
                   ) : (
@@ -491,7 +491,7 @@ export function HomePage() {
                 {controlador.resultado ? (
                   <>
                     <div className="neighbor-pills">
-                      {constructorShowFinal ? (
+                      {mostrarFinalConstructor ? (
                         <span className="neighbor-pill is-best">
                           Salida exitosa: X = [{controlador.resultado.solutionRoute.join(",")}], F ={" "}
                           {controlador.resultado.solutionCost}
@@ -513,18 +513,18 @@ export function HomePage() {
                           <DialogHeader>
                             <DialogTitle>Árbol de búsqueda generado</DialogTitle>
                             <DialogDescription>
-                              {constructorShowFinal
+                              {mostrarFinalConstructor
                                 ? `Visualización completa para tu grafo. Salida exitosa: X=[${controlador.resultado.solutionRoute.join(",")}], F=${controlador.resultado.solutionCost}.`
-                                : `Árbol construido hasta ${constructorRunLabel.toLowerCase()}. La salida final aparece en el último paso.`}
+                                : `Árbol construido hasta ${etiquetaPasoConstructor.toLowerCase()}. La salida final aparece en el último paso.`}
                             </DialogDescription>
                           </DialogHeader>
-                          {constructorRunStep === 0 || !constructorTreeResult ? (
+                          {pasoConstructor === 0 || !resultadoArbolConstructor ? (
                             <p className="muted-note">
                               Aún no hay iteraciones visibles. Avanza al siguiente paso.
                             </p>
                           ) : (
                             <SearchTreeView
-                              result={constructorTreeResult}
+                              result={resultadoArbolConstructor}
                               varianteResumen="none"
                               varianteDiseno="compact"
                             />
@@ -543,10 +543,10 @@ export function HomePage() {
               <>
                 <h4>Vecinos evaluados en esta iteración</h4>
                 <div className="neighbor-pills">
-                  {stage.neighbors.length > 0 ? (
-                    stage.neighbors.map((neighbor, index) => (
+                  {etapa.neighbors.length > 0 ? (
+                    etapa.neighbors.map((neighbor, index) => (
                       <span
-                        key={`${stageIndex}-${index}`}
+                        key={`${indiceEtapa}-${index}`}
                         className={`neighbor-pill ${neighbor.isBest ? "is-best" : ""}`}
                       >
                         {neighbor.routeText} = {neighbor.cost}
@@ -567,15 +567,15 @@ export function HomePage() {
                       <DialogHeader>
                         <DialogTitle>Árbol de búsqueda del caso base</DialogTitle>
                         <DialogDescription>
-                          {showFinalAnswer
-                            ? `Visualización completa del recorrido para el caso base. Salida exitosa: X=[${baseRun.solutionRoute.join(",")}], F=${baseRun.solutionCost}.`
-                            : `Árbol construido hasta la iteración actual (${treeIterationsToShow}). La salida final se muestra al llegar al paso de paro.`}
+                          {mostrarRespuestaFinal
+                            ? `Visualización completa del recorrido para el caso base. Salida exitosa: X=[${corridaBase.solutionRoute.join(",")}], F=${corridaBase.solutionCost}.`
+                            : `Árbol construido hasta la iteración actual (${iteracionesArbolAMostrar}). La salida final se muestra al llegar al paso de paro.`}
                         </DialogDescription>
                       </DialogHeader>
-                      {treeIterationsToShow === 0 ? (
+                      {iteracionesArbolAMostrar === 0 ? (
                         <p className="muted-note">Aún no hay iteraciones en el árbol. Avanza al siguiente paso.</p>
                       ) : (
-                        <SearchTreeView result={treeResultForStage} varianteResumen="none" varianteDiseno="compact" />
+                        <SearchTreeView result={resultadoArbolPorEtapa} varianteResumen="none" varianteDiseno="compact" />
                       )}
                     </DialogContent>
                   </Dialog>
@@ -590,7 +590,7 @@ export function HomePage() {
         open={controlador.dialogoAristaAbierto}
         onOpenChange={(open) => {
           controlador.manejarCambioDialogoArista(open);
-          if (!open) setEdgeWeightError("");
+          if (!open) setErrorPesoArista("");
         }}
       >
         <DialogContent>
@@ -615,18 +615,18 @@ export function HomePage() {
                 const nextValue = event.target.value;
                 controlador.setEntradaPesoArista(nextValue);
                 if (!nextValue.trim()) {
-                  setEdgeWeightError("El peso es obligatorio.");
+                  setErrorPesoArista("El peso es obligatorio.");
                   return;
                 }
                 const parsed = Number(nextValue);
                 if (!Number.isFinite(parsed) || parsed <= 0) {
-                  setEdgeWeightError("Ingresa un peso mayor que 0.");
+                  setErrorPesoArista("Ingresa un peso mayor que 0.");
                   return;
                 }
-                setEdgeWeightError("");
+                setErrorPesoArista("");
               }}
             />
-            {edgeWeightError ? <p className="field-error">{edgeWeightError}</p> : null}
+            {errorPesoArista ? <p className="field-error">{errorPesoArista}</p> : null}
 
             <label className="toggle-line light">
               <input
@@ -641,13 +641,13 @@ export function HomePage() {
               <Button variant="outline" onClick={() => controlador.setDialogoAristaAbierto(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleConfirmEdgeCreation}>Guardar conexión</Button>
+              <Button onClick={manejarConfirmacionCreacionArista}>Guardar conexión</Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={controlador.addNodeDialogOpen} onOpenChange={controlador.handleNodeDialogOpenChange}>
+      <Dialog open={controlador.dialogoNodoAbierto} onOpenChange={controlador.manejarCambioDialogoNodo}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nombre de la ciudad</DialogTitle>
@@ -656,7 +656,7 @@ export function HomePage() {
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              controlador.confirmNodeCreation();
+              controlador.confirmarCreacionNodo();
             }}
             className="control-stack"
           >
@@ -665,11 +665,11 @@ export function HomePage() {
             </Label.Root>
             <Input
               id="city-name-input-home"
-              value={controlador.cityNameInput}
-              onChange={(event) => controlador.setCityNameInput(event.target.value)}
+              value={controlador.entradaNombreNodo}
+              onChange={(event) => controlador.setEntradaNombreNodo(event.target.value)}
             />
             <div className="inline-actions">
-              <Button variant="outline" type="button" onClick={() => controlador.handleNodeDialogOpenChange(false)}>
+              <Button variant="outline" type="button" onClick={() => controlador.manejarCambioDialogoNodo(false)}>
                 Cancelar
               </Button>
               <Button type="submit">Agregar nodo</Button>

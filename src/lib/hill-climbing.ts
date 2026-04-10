@@ -213,18 +213,3 @@ export function obtenerClavesPasosRuta(ruta: Ruta): Set<string> {
   return pasos;
 }
 
-// Aliases de compatibilidad temporal.
-export const directedEdgeKey = claveAristaDirigida;
-export const undirectedEdgeKey = claveAristaNoDirigida;
-export const cloneGraph = clonarGrafo;
-export const createEdge = crearArista;
-export const findEdge = buscarArista;
-export const getEdgeCost = obtenerCostoArista;
-export const calculateRouteCost = calcularCostoRuta;
-export const generateSwapNeighbors = generarVecinosPorIntercambio;
-export const hillClimb = escalarColina;
-export const routeToString = rutaATexto;
-export const parseRoute = parsearRuta;
-export const isRouteValid = esRutaValida;
-export const randomCompleteGraph = grafoCompletoAleatorio;
-export const getRouteStepKeys = obtenerClavesPasosRuta;

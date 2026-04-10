@@ -13,8 +13,8 @@ import { useControladorSimulador } from "@/lib/use-simulator-controller";
 
 export function SimulatorPage() {
   const controlador = useControladorSimulador();
-  const sourceLabel = controlador.fuenteEscenario === "example" ? "Ejemplo de clase" : "Construido por ti";
-  const runSourceLabel =
+  const etiquetaFuente = controlador.fuenteEscenario === "example" ? "Ejemplo de clase" : "Construido por ti";
+  const etiquetaFuenteUltimaEjecucion =
     controlador.fuenteUltimaEjecucion === "example"
       ? "Resultado del ejemplo de clase"
       : controlador.fuenteUltimaEjecucion === "custom"
@@ -43,7 +43,7 @@ export function SimulatorPage() {
             </CardDescription>
             <div className="source-line">
               <span className={`source-chip ${controlador.fuenteEscenario === "example" ? "is-example" : "is-custom"}`}>
-                {sourceLabel}
+                {etiquetaFuente}
               </span>
             </div>
           </CardHeader>
@@ -89,16 +89,16 @@ export function SimulatorPage() {
                 <select
                   id="node-label-mode-simulator"
                   className="ui-input"
-                  value={controlador.nodeLabelMode}
-                  onChange={(event) => controlador.setNodeLabelMode(event.target.value as "numeric" | "city")}
-                  disabled={controlador.modoEditor === "add-node" || controlador.hasNumericNodes}
+                  value={controlador.modoEtiquetaNodo}
+                  onChange={(event) => controlador.setModoEtiquetaNodo(event.target.value as "numeric" | "city")}
+                  disabled={controlador.modoEditor === "add-node" || controlador.hayNodosNumericos}
                 >
                   <option value="numeric">Número</option>
                   <option value="city">Ciudad</option>
                 </select>
               </div>
 
-            <Dialog open={controlador.addNodeDialogOpen} onOpenChange={controlador.handleNodeDialogOpenChange}>
+            <Dialog open={controlador.dialogoNodoAbierto} onOpenChange={controlador.manejarCambioDialogoNodo}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Nombre de la ciudad</DialogTitle>
@@ -107,7 +107,7 @@ export function SimulatorPage() {
                 <form
               onSubmit={(event) => {
                 event.preventDefault();
-                controlador.confirmNodeCreation();
+                controlador.confirmarCreacionNodo();
               }}
               className="control-stack"
             >
@@ -116,11 +116,11 @@ export function SimulatorPage() {
               </Label.Root>
               <Input
                 id="city-name-input"
-                value={controlador.cityNameInput}
+                value={controlador.entradaNombreNodo}
                 onChange={(event) => controlador.setEntradaNombreNodo(event.target.value)}
               />
               <div className="inline-actions">
-                <Button variant="outline" type="button" onClick={() => controlador.handleNodeDialogOpenChange(false)}>
+                <Button variant="outline" type="button" onClick={() => controlador.manejarCambioDialogoNodo(false)}>
                   Cancelar
                 </Button>
                 <Button type="submit">Agregar nodo</Button>
@@ -136,7 +136,7 @@ export function SimulatorPage() {
               </p>
               {controlador.modoEditor === "add-node" ? (
                 <p className="muted-note">
-                  {controlador.nodeLabelMode === "city"
+                  {controlador.modoEtiquetaNodo === "city"
                     ? "Haz clic en el lienzo para agregar una ciudad y escribe su nombre."
                     : "Haz clic en el lienzo para agregar un nodo numérico."}
                 </p>
@@ -238,7 +238,7 @@ export function SimulatorPage() {
                 controlador.fuenteUltimaEjecucion === "example" ? "is-example" : controlador.fuenteUltimaEjecucion === "custom" ? "is-custom" : ""
               }`}
             >
-              {runSourceLabel}
+              {etiquetaFuenteUltimaEjecucion}
             </span>
           </div>
         </CardHeader>
