@@ -13,7 +13,6 @@ import {
   BASE_POSITIONS,
   formatDefaultRoute,
   nextNodeId,
-  parseIterations,
   removeNode,
   upsertEdge,
   type Point,
@@ -240,7 +239,7 @@ export function useSimulatorController() {
       }
     }
 
-    const next = hillClimb(graph, route, parseIterations(maxIterationsInput));
+    const next = hillClimb(graph, route, INTERNAL_MAX_ITERATIONS);
     setResult(next);
     setLastRunSource(graphSource);
     setSelectedIteration(1);
@@ -297,7 +296,7 @@ export function useSimulatorController() {
     setLabels(nextLabels);
     setPositions(BASE_POSITIONS);
     setRouteInput(preset.defaultRoute.join(","));
-    setResult(hillClimb(scenario, preset.defaultRoute, parseIterations(maxIterationsInput)));
+    setResult(hillClimb(scenario, preset.defaultRoute, INTERNAL_MAX_ITERATIONS));
     setSelectedIteration(1);
     setMode("select");
     setPendingEdgeFromId(null);

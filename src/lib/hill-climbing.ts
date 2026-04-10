@@ -77,13 +77,39 @@ export function hillClimb(graph: WeightedGraph, startRoute: Route, maxIterations
   let currentRoute = [...startRoute];
   let currentCost = calculateRouteCost(currentRoute, graph);
   const iterations: HillClimbIteration[] = [];
+  const safeMaxIterations = Math.max(1, Math.floor(maxIterations));
 
-  for (let iteration = 1; iteration <= maxIterations; iteration += 1) {
+  // With fewer than 2 nodes there are no neighbors to compare, so current route is already local optimum.
+  if (currentRoute.length < 2) {
+    return {
+      startRoute: [...startRoute],
+      startCost: currentCost,
+      iterations,
+      solutionRoute: currentRoute,
+      solutionCost: currentCost,
+      solutionIteration: 0,
+      stopReason: "local-optimum",
+    };
+  }
+
+  for (let iteration = 1; iteration <= safeMaxIterations; iteration += 1) {
     const neighbors: NeighborCandidate[] = generateSwapNeighbors(currentRoute).map((neighbor) => ({
       route: neighbor.route,
       swap: neighbor.swap,
       cost: calculateRouteCost(neighbor.route, graph),
     }));
+
+    if (neighbors.length === 0) {
+      return {
+        startRoute: [...startRoute],
+        startCost: calculateRouteCost(startRoute, graph),
+        iterations,
+        solutionRoute: currentRoute,
+        solutionCost: currentCost,
+        solutionIteration: iteration - 1,
+        stopReason: "local-optimum",
+      };
+    }
 
     const bestNeighbor = neighbors.reduce((best, candidate) => (candidate.cost < best.cost ? candidate : best));
     const moved = bestNeighbor.cost < currentCost;
@@ -119,7 +145,7 @@ export function hillClimb(graph: WeightedGraph, startRoute: Route, maxIterations
     iterations,
     solutionRoute: currentRoute,
     solutionCost: currentCost,
-    solutionIteration: maxIterations,
+    solutionIteration: safeMaxIterations,
     stopReason: "max-iterations",
   };
 }
