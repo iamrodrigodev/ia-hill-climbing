@@ -1,205 +1,230 @@
 import type {
-  GraphEdge,
-  HillClimbIteration,
-  HillClimbResult,
-  NeighborCandidate,
-  Route,
-  WeightedGraph,
+  AristaGrafo,
+  CandidatoVecino,
+  GrafoPonderado,
+  IteracionEscalada,
+  ResultadoEscalada,
+  Ruta,
 } from "@/lib/types";
 
-export function directedEdgeKey(from: number, to: number): string {
-  return `${from}->${to}`;
+export function claveAristaDirigida(desde: number, hacia: number): string {
+  return `${desde}->${hacia}`;
 }
 
-export function undirectedEdgeKey(a: number, b: number): string {
+export function claveAristaNoDirigida(a: number, b: number): string {
   return a < b ? `${a}-${b}` : `${b}-${a}`;
 }
 
-export function cloneGraph(graph: WeightedGraph): WeightedGraph {
+export function clonarGrafo(grafo: GrafoPonderado): GrafoPonderado {
   return {
-    nodes: [...graph.nodes],
-    edges: graph.edges.map((edge) => ({ ...edge })),
+    nodes: [...grafo.nodes],
+    edges: grafo.edges.map((arista) => ({ ...arista })),
   };
 }
 
-export function createEdge(
-  from: number,
-  to: number,
-  weight: number,
-  bidirectional: boolean,
+export function crearArista(
+  desde: number,
+  hacia: number,
+  peso: number,
+  bidireccional: boolean,
   id?: string,
-): GraphEdge {
+): AristaGrafo {
   return {
-    id: id ?? `${from}-${to}-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
-    from,
-    to,
-    weight: Math.max(1, Math.floor(weight)),
-    bidirectional,
+    id: id ?? `${desde}-${hacia}-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
+    from: desde,
+    to: hacia,
+    weight: Math.max(1, Math.floor(peso)),
+    bidirectional: bidireccional,
   };
 }
 
-export function findEdge(graph: WeightedGraph, from: number, to: number): GraphEdge | null {
-  for (const edge of graph.edges) {
-    if (edge.from === from && edge.to === to) return edge;
-    if (edge.bidirectional && edge.from === to && edge.to === from) return edge;
+export function buscarArista(grafo: GrafoPonderado, desde: number, hacia: number): AristaGrafo | null {
+  for (const arista of grafo.edges) {
+    if (arista.from === desde && arista.to === hacia) return arista;
+    if (arista.bidirectional && arista.from === hacia && arista.to === desde) return arista;
   }
   return null;
 }
 
-export function getEdgeCost(graph: WeightedGraph, from: number, to: number): number {
-  const edge = findEdge(graph, from, to);
-  return edge ? edge.weight : Number.POSITIVE_INFINITY;
+export function obtenerCostoArista(grafo: GrafoPonderado, desde: number, hacia: number): number {
+  const arista = buscarArista(grafo, desde, hacia);
+  return arista ? arista.weight : Number.POSITIVE_INFINITY;
 }
 
-export function calculateRouteCost(route: Route, graph: WeightedGraph): number {
-  if (route.length < 2) return 0;
+export function calcularCostoRuta(ruta: Ruta, grafo: GrafoPonderado): number {
+  if (ruta.length < 2) return 0;
   let total = 0;
-  for (let i = 0; i < route.length - 1; i += 1) {
-    const edgeCost = getEdgeCost(graph, route[i], route[i + 1]);
-    total += edgeCost;
+  for (let i = 0; i < ruta.length - 1; i += 1) {
+    const costoArista = obtenerCostoArista(grafo, ruta[i], ruta[i + 1]);
+    total += costoArista;
   }
   return total;
 }
 
-export function generateSwapNeighbors(route: Route): Array<{ route: Route; swap: [number, number] }> {
-  const neighbors: Array<{ route: Route; swap: [number, number] }> = [];
-  for (let i = 0; i < route.length - 1; i += 1) {
-    for (let j = i + 1; j < route.length; j += 1) {
-      const next = [...route];
-      [next[i], next[j]] = [next[j], next[i]];
-      neighbors.push({ route: next, swap: [i, j] });
+export function generarVecinosPorIntercambio(
+  ruta: Ruta,
+): Array<{ route: Ruta; swap: [number, number] }> {
+  const vecinos: Array<{ route: Ruta; swap: [number, number] }> = [];
+  for (let i = 0; i < ruta.length - 1; i += 1) {
+    for (let j = i + 1; j < ruta.length; j += 1) {
+      const siguiente = [...ruta];
+      [siguiente[i], siguiente[j]] = [siguiente[j], siguiente[i]];
+      vecinos.push({ route: siguiente, swap: [i, j] });
     }
   }
-  return neighbors;
+  return vecinos;
 }
 
-export function hillClimb(graph: WeightedGraph, startRoute: Route, maxIterations = 50): HillClimbResult {
-  let currentRoute = [...startRoute];
-  let currentCost = calculateRouteCost(currentRoute, graph);
-  const iterations: HillClimbIteration[] = [];
-  const safeMaxIterations = Math.max(1, Math.floor(maxIterations));
+export function escalarColina(grafo: GrafoPonderado, rutaInicial: Ruta, maxIteraciones = 50): ResultadoEscalada {
+  let rutaActual = [...rutaInicial];
+  let costoActual = calcularCostoRuta(rutaActual, grafo);
+  const iteraciones: IteracionEscalada[] = [];
+  const maxIteracionesSeguro = Math.max(1, Math.floor(maxIteraciones));
 
-  // With fewer than 2 nodes there are no neighbors to compare, so current route is already local optimum.
-  if (currentRoute.length < 2) {
+  // Con menos de 2 nodos no hay vecinos para comparar, por lo que ya es óptimo local.
+  if (rutaActual.length < 2) {
     return {
-      startRoute: [...startRoute],
-      startCost: currentCost,
-      iterations,
-      solutionRoute: currentRoute,
-      solutionCost: currentCost,
+      startRoute: [...rutaInicial],
+      startCost: costoActual,
+      iterations: iteraciones,
+      solutionRoute: rutaActual,
+      solutionCost: costoActual,
       solutionIteration: 0,
       stopReason: "local-optimum",
     };
   }
 
-  for (let iteration = 1; iteration <= safeMaxIterations; iteration += 1) {
-    const neighbors: NeighborCandidate[] = generateSwapNeighbors(currentRoute).map((neighbor) => ({
-      route: neighbor.route,
-      swap: neighbor.swap,
-      cost: calculateRouteCost(neighbor.route, graph),
+  for (let numeroIteracion = 1; numeroIteracion <= maxIteracionesSeguro; numeroIteracion += 1) {
+    const vecinos: CandidatoVecino[] = generarVecinosPorIntercambio(rutaActual).map((vecino) => ({
+      route: vecino.route,
+      swap: vecino.swap,
+      cost: calcularCostoRuta(vecino.route, grafo),
     }));
 
-    if (neighbors.length === 0) {
+    if (vecinos.length === 0) {
       return {
-        startRoute: [...startRoute],
-        startCost: calculateRouteCost(startRoute, graph),
-        iterations,
-        solutionRoute: currentRoute,
-        solutionCost: currentCost,
-        solutionIteration: iteration - 1,
+        startRoute: [...rutaInicial],
+        startCost: calcularCostoRuta(rutaInicial, grafo),
+        iterations: iteraciones,
+        solutionRoute: rutaActual,
+        solutionCost: costoActual,
+        solutionIteration: numeroIteracion - 1,
         stopReason: "local-optimum",
       };
     }
 
-    const bestNeighbor = neighbors.reduce((best, candidate) => (candidate.cost < best.cost ? candidate : best));
-    const moved = bestNeighbor.cost < currentCost;
+    const mejorVecino = vecinos.reduce((mejor, candidato) =>
+      candidato.cost < mejor.cost ? candidato : mejor,
+    );
+    const seMovio = mejorVecino.cost < costoActual;
 
-    iterations.push({
-      iteration,
-      currentRoute: [...currentRoute],
-      currentCost,
-      neighbors,
-      bestNeighbor,
-      moved,
+    iteraciones.push({
+      iteration: numeroIteracion,
+      currentRoute: [...rutaActual],
+      currentCost: costoActual,
+      neighbors: vecinos,
+      bestNeighbor: mejorVecino,
+      moved: seMovio,
     });
 
-    if (!moved) {
+    if (!seMovio) {
       return {
-        startRoute: [...startRoute],
-        startCost: calculateRouteCost(startRoute, graph),
-        iterations,
-        solutionRoute: currentRoute,
-        solutionCost: currentCost,
-        solutionIteration: iteration - 1,
+        startRoute: [...rutaInicial],
+        startCost: calcularCostoRuta(rutaInicial, grafo),
+        iterations: iteraciones,
+        solutionRoute: rutaActual,
+        solutionCost: costoActual,
+        solutionIteration: numeroIteracion - 1,
         stopReason: "local-optimum",
       };
     }
 
-    currentRoute = [...bestNeighbor.route];
-    currentCost = bestNeighbor.cost;
+    rutaActual = [...mejorVecino.route];
+    costoActual = mejorVecino.cost;
   }
 
   return {
-    startRoute: [...startRoute],
-    startCost: calculateRouteCost(startRoute, graph),
-    iterations,
-    solutionRoute: currentRoute,
-    solutionCost: currentCost,
-    solutionIteration: safeMaxIterations,
+    startRoute: [...rutaInicial],
+    startCost: calcularCostoRuta(rutaInicial, grafo),
+    iterations: iteraciones,
+    solutionRoute: rutaActual,
+    solutionCost: costoActual,
+    solutionIteration: maxIteracionesSeguro,
     stopReason: "max-iterations",
   };
 }
 
-export function routeToString(route: Route): string {
-  return route.join("");
+export function rutaATexto(ruta: Ruta): string {
+  return ruta.join("");
 }
 
-export function parseRoute(input: string): Route {
-  const trimmed = input.trim();
-  if (!trimmed) return [];
+export function parsearRuta(entrada: string): Ruta {
+  const texto = entrada.trim();
+  if (!texto) return [];
 
-  const hasSeparators = /[\s,;-]/.test(trimmed);
-  if (hasSeparators) {
-    return trimmed
+  const tieneSeparadores = /[\s,;-]/.test(texto);
+  if (tieneSeparadores) {
+    return texto
       .split(/[\s,;-]+/)
-      .map((value) => Number(value))
-      .filter((value) => Number.isInteger(value) && value >= 0);
+      .map((valor) => Number(valor))
+      .filter((valor) => Number.isInteger(valor) && valor >= 0);
   }
 
-  return trimmed
+  return texto
     .split("")
-    .map((char) => Number(char))
-    .filter((value) => Number.isInteger(value) && value >= 0);
+    .map((caracter) => Number(caracter))
+    .filter((valor) => Number.isInteger(valor) && valor >= 0);
 }
 
-export function isRouteValid(route: Route, nodes: number[]): boolean {
-  if (route.length !== nodes.length) return false;
-  const routeSet = new Set(route);
-  if (routeSet.size !== route.length) return false;
-  return route.every((node) => nodes.includes(node));
+export function esRutaValida(ruta: Ruta, nodos: number[]): boolean {
+  if (ruta.length !== nodos.length) return false;
+  const conjuntoRuta = new Set(ruta);
+  if (conjuntoRuta.size !== ruta.length) return false;
+  return ruta.every((nodo) => nodos.includes(nodo));
 }
 
-export function randomCompleteGraph(nodes: number[], min = 100, max = 900, step = 100): WeightedGraph {
-  const span = Math.floor((max - min) / step) + 1;
-  const edges: GraphEdge[] = [];
+export function grafoCompletoAleatorio(
+  nodos: number[],
+  minimo = 100,
+  maximo = 900,
+  paso = 100,
+): GrafoPonderado {
+  const rango = Math.floor((maximo - minimo) / paso) + 1;
+  const aristas: AristaGrafo[] = [];
 
-  for (let i = 0; i < nodes.length; i += 1) {
-    for (let j = i + 1; j < nodes.length; j += 1) {
-      const weight = min + Math.floor(Math.random() * span) * step;
-      edges.push(createEdge(nodes[i], nodes[j], weight, true));
+  for (let i = 0; i < nodos.length; i += 1) {
+    for (let j = i + 1; j < nodos.length; j += 1) {
+      const peso = minimo + Math.floor(Math.random() * rango) * paso;
+      aristas.push(crearArista(nodos[i], nodos[j], peso, true));
     }
   }
 
   return {
-    nodes: [...nodes],
-    edges,
+    nodes: [...nodos],
+    edges: aristas,
   };
 }
 
-export function getRouteStepKeys(route: Route): Set<string> {
-  const steps = new Set<string>();
-  for (let i = 0; i < route.length - 1; i += 1) {
-    steps.add(directedEdgeKey(route[i], route[i + 1]));
+export function obtenerClavesPasosRuta(ruta: Ruta): Set<string> {
+  const pasos = new Set<string>();
+  for (let i = 0; i < ruta.length - 1; i += 1) {
+    pasos.add(claveAristaDirigida(ruta[i], ruta[i + 1]));
   }
-  return steps;
+  return pasos;
 }
+
+// Aliases de compatibilidad temporal.
+export const directedEdgeKey = claveAristaDirigida;
+export const undirectedEdgeKey = claveAristaNoDirigida;
+export const cloneGraph = clonarGrafo;
+export const createEdge = crearArista;
+export const findEdge = buscarArista;
+export const getEdgeCost = obtenerCostoArista;
+export const calculateRouteCost = calcularCostoRuta;
+export const generateSwapNeighbors = generarVecinosPorIntercambio;
+export const hillClimb = escalarColina;
+export const routeToString = rutaATexto;
+export const parseRoute = parsearRuta;
+export const isRouteValid = esRutaValida;
+export const randomCompleteGraph = grafoCompletoAleatorio;
+export const getRouteStepKeys = obtenerClavesPasosRuta;

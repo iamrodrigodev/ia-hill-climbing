@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, MousePointer2, Play, PlusCircle, Share2, Trash2 } from "lucide-react";
 import * as Label from "@radix-ui/react-label";
-import { routeToString } from "@/lib/hill-climbing";
+import { rutaATexto } from "@/lib/hill-climbing";
 import { baseGraph, baseRun } from "@/lib/mock-data";
-import { useSimulatorController } from "@/lib/use-simulator-controller";
+import { useControladorSimulador } from "@/lib/use-simulator-controller";
 import { GraphCanvas } from "@/components/graph/GraphCanvas";
 import { SearchTreeView } from "@/components/graph/SearchTreeView";
 import { Button } from "@/components/ui/button";
@@ -19,29 +19,29 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-type Tone = "start" | "progress" | "optimal" | "stop";
+type Tono = "start" | "progress" | "optimal" | "stop";
 
-interface ExampleStage {
+interface EtapaEjemplo {
   title: string;
   subtitle: string;
   route: number[] | null;
   cost: number | null;
   neighbors: Array<{ routeText: string; cost: number; isBest: boolean }>;
   decision: string;
-  tone: Tone;
+  tone: Tono;
 }
 
-const basePositions = {
+const posicionesBase = {
   0: { x: 96, y: 116 },
   1: { x: 432, y: 168 },
   2: { x: 760, y: 118 },
   3: { x: 260, y: 352 },
 };
 
-const baseLabels = { 0: "0", 1: "1", 2: "2", 3: "3" };
+const etiquetasBase = { 0: "0", 1: "1", 2: "2", 3: "3" };
 
-function buildStages(): ExampleStage[] {
-  const initialStage: ExampleStage = {
+function construirEtapas(): EtapaEjemplo[] {
+  const etapaInicial: EtapaEjemplo = {
     title: "Estado inicial",
     subtitle: "Presentación del grafo base para empezar el ejemplo.",
     route: null,
@@ -51,20 +51,20 @@ function buildStages(): ExampleStage[] {
     tone: "start",
   };
 
-  const runStages = baseRun.iterations.map((iteration, index) => {
-    const currentText = routeToString(iteration.currentRoute);
-    const bestText = routeToString(iteration.bestNeighbor.route);
+  const etapasEjecucion = baseRun.iterations.map((iteration, index) => {
+    const currentText = rutaATexto(iteration.currentRoute);
+    const bestText = rutaATexto(iteration.bestNeighbor.route);
     const comparisonText = `${iteration.bestNeighbor.cost} ${
       iteration.bestNeighbor.cost < iteration.currentCost ? "<" : ">="
     } ${iteration.currentCost}`;
     const neighbors = iteration.neighbors.map((neighbor) => ({
-      routeText: routeToString(neighbor.route),
+      routeText: rutaATexto(neighbor.route),
       cost: neighbor.cost,
       isBest:
-        routeToString(neighbor.route) === bestText && neighbor.cost === iteration.bestNeighbor.cost,
+        rutaATexto(neighbor.route) === bestText && neighbor.cost === iteration.bestNeighbor.cost,
     }));
 
-    const tone: Tone =
+    const tone: Tono =
       index === 0
         ? "start"
         : iteration.moved
@@ -83,13 +83,13 @@ function buildStages(): ExampleStage[] {
         ? `Se elige ${bestText} porque es el menor costo entre los vecinos (F=${iteration.bestNeighbor.cost}) y mejora a la ruta actual ${currentText} (F=${iteration.currentCost}). Regla aplicada: ${comparisonText}, entonces sí se mueve.`
         : `Se detiene porque no hay mejora estricta: el mejor vecino es ${bestText} con F=${iteration.bestNeighbor.cost} y la ruta actual ${currentText} tiene F=${iteration.currentCost}. Regla aplicada: ${comparisonText}, entonces no se mueve (óptimo local).`,
       tone,
-    } satisfies ExampleStage;
+    } satisfies EtapaEjemplo;
   });
 
-  return [initialStage, ...runStages];
+  return [etapaInicial, ...etapasEjecucion];
 }
 
-function toneLabel(tone: Tone): string {
+function etiquetaTono(tone: Tono): string {
   if (tone === "start") return "Inicio";
   if (tone === "progress") return "Mejora";
   if (tone === "optimal") return "Mejor encontrado";
@@ -99,24 +99,24 @@ function toneLabel(tone: Tone): string {
 export function HomePage() {
   const location = useLocation();
   const isConstructorMode = location.pathname !== "/";
-  const controller = useSimulatorController();
+  const controlador = useControladorSimulador();
 
-  const stages = useMemo(buildStages, []);
+  const stages = useMemo(construirEtapas, []);
   const [stageIndex, setStageIndex] = useState(0);
   const [edgeWeightError, setEdgeWeightError] = useState("");
   const [constructorRunStep, setConstructorRunStep] = useState(0);
   const [exampleMoveEnabled, setExampleMoveEnabled] = useState(false);
   const [exampleDraggingNodeId, setExampleDraggingNodeId] = useState<number | null>(null);
   const [examplePositions, setExamplePositions] = useState(() => ({
-    0: { ...basePositions[0] },
-    1: { ...basePositions[1] },
-    2: { ...basePositions[2] },
-    3: { ...basePositions[3] },
+    0: { ...posicionesBase[0] },
+    1: { ...posicionesBase[1] },
+    2: { ...posicionesBase[2] },
+    3: { ...posicionesBase[3] },
   }));
   const stage = stages[stageIndex];
 
-  const hasAtLeastOneNode = controller.graph.nodes.length > 0;
-  const hasAtLeastTwoNodes = controller.graph.nodes.length > 1;
+  const hasAtLeastOneNode = controlador.grafo.nodes.length > 0;
+  const hasAtLeastTwoNodes = controlador.grafo.nodes.length > 1;
 
   const showFinalAnswer = stageIndex === stages.length - 1 || stage.tone === "stop";
   const treeIterationsToShow = Math.max(0, stageIndex);
@@ -132,44 +132,44 @@ export function HomePage() {
 
   useEffect(() => {
     setConstructorRunStep(0);
-  }, [controller.result]);
+  }, [controlador.resultado]);
 
-  const constructorTotalSteps = controller.result ? controller.result.iterations.length + 1 : 1;
+  const constructorTotalSteps = controlador.resultado ? controlador.resultado.iterations.length + 1 : 1;
   const constructorRunLabel = constructorRunStep === 0 ? "Inicio" : `Iteración ${constructorRunStep}`;
-  const constructorShowFinal = !!controller.result && constructorRunStep === constructorTotalSteps - 1;
+  const constructorShowFinal = !!controlador.resultado && constructorRunStep === constructorTotalSteps - 1;
   const constructorTreeResult = useMemo(() => {
-    if (!controller.result) return null;
+    if (!controlador.resultado) return null;
     return {
-      ...controller.result,
-      iterations: controller.result.iterations.slice(0, constructorRunStep),
-      solutionRoute: constructorShowFinal ? controller.result.solutionRoute : [],
-      solutionCost: constructorShowFinal ? controller.result.solutionCost : Number.NaN,
+      ...controlador.resultado,
+      iterations: controlador.resultado.iterations.slice(0, constructorRunStep),
+      solutionRoute: constructorShowFinal ? controlador.resultado.solutionRoute : [],
+      solutionCost: constructorShowFinal ? controlador.resultado.solutionCost : Number.NaN,
     };
-  }, [constructorRunStep, constructorShowFinal, controller.result]);
+  }, [constructorRunStep, constructorShowFinal, controlador.resultado]);
 
   const constructorActiveRoute = useMemo(() => {
-    if (!controller.result) return controller.activeRoute;
+    if (!controlador.resultado) return controlador.rutaActiva;
     if (constructorRunStep === 0) return undefined;
-    return controller.result.iterations[constructorRunStep - 1]?.currentRoute;
-  }, [constructorRunStep, controller.activeRoute, controller.result]);
+    return controlador.resultado.iterations[constructorRunStep - 1]?.currentRoute;
+  }, [constructorRunStep, controlador.rutaActiva, controlador.resultado]);
 
-  const constructorStatus = !controller.result
-    ? controller.mode === "add-node"
+  const constructorStatus = !controlador.resultado
+    ? controlador.modoEditor === "add-node"
       ? "Haz clic sobre el lienzo para crear nodos."
-      : controller.mode === "add-edge"
-        ? controller.pendingEdgeFromId === null
+      : controlador.modoEditor === "add-edge"
+        ? controlador.idNodoOrigenPendiente === null
           ? "Selecciona nodo origen y luego nodo destino para crear una conexión."
-          : `Origen seleccionado: ${controller.pendingEdgeFromId}. Elige nodo destino.`
-        : controller.mode === "delete"
+          : `Origen seleccionado: ${controlador.idNodoOrigenPendiente}. Elige nodo destino.`
+        : controlador.modoEditor === "delete"
           ? "Haz clic en un nodo o conexión para eliminar."
           : "Modo mover activo. También puedes ejecutar el algoritmo cuando tengas un grafo válido."
     : constructorRunStep === 0
-      ? `Inicio del cálculo: ruta inicial ${routeToString(controller.result.startRoute)} con F=${controller.result.startCost}.`
+      ? `Inicio del cálculo: ruta inicial ${rutaATexto(controlador.resultado.startRoute)} con F=${controlador.resultado.startCost}.`
       : (() => {
-          const iteration = controller.result.iterations[constructorRunStep - 1];
+          const iteration = controlador.resultado.iterations[constructorRunStep - 1];
           if (!iteration) return "Resultado generado.";
-          const currentText = routeToString(iteration.currentRoute);
-          const bestText = routeToString(iteration.bestNeighbor.route);
+          const currentText = rutaATexto(iteration.currentRoute);
+          const bestText = rutaATexto(iteration.bestNeighbor.route);
           const comparison = `${iteration.bestNeighbor.cost} ${
             iteration.bestNeighbor.cost < iteration.currentCost ? "<" : ">="
           } ${iteration.currentCost}`;
@@ -179,7 +179,7 @@ export function HomePage() {
         })();
 
   const handleConfirmEdgeCreation = () => {
-    const normalizedWeight = controller.edgeWeightInput.trim();
+    const normalizedWeight = controlador.entradaPesoArista.trim();
     if (!normalizedWeight) {
       setEdgeWeightError("El peso es obligatorio.");
       return;
@@ -190,7 +190,7 @@ export function HomePage() {
       return;
     }
     setEdgeWeightError("");
-    controller.confirmEdgeCreation();
+    controlador.confirmarCreacionArista();
   };
 
   return (
@@ -209,8 +209,8 @@ export function HomePage() {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => controller.setEditorMode("select")}
-                  disabled={controller.mode === "select" || !hasAtLeastOneNode}
+                  onClick={() => controlador.fijarModoEditor("select")}
+                  disabled={controlador.modoEditor === "select" || !hasAtLeastOneNode}
                 >
                   <MousePointer2 size={14} />
                   Mover
@@ -218,8 +218,8 @@ export function HomePage() {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => controller.setEditorMode("add-node")}
-                  disabled={controller.mode === "add-node"}
+                  onClick={() => controlador.fijarModoEditor("add-node")}
+                  disabled={controlador.modoEditor === "add-node"}
                 >
                   <PlusCircle size={14} />
                   Nodo
@@ -227,8 +227,8 @@ export function HomePage() {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => controller.setEditorMode("add-edge")}
-                  disabled={controller.mode === "add-edge" || !hasAtLeastTwoNodes}
+                  onClick={() => controlador.fijarModoEditor("add-edge")}
+                  disabled={controlador.modoEditor === "add-edge" || !hasAtLeastTwoNodes}
                 >
                   <Share2 size={14} />
                   Conexión
@@ -236,13 +236,13 @@ export function HomePage() {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => controller.setEditorMode("delete")}
-                  disabled={controller.mode === "delete" || !hasAtLeastOneNode}
+                  onClick={() => controlador.fijarModoEditor("delete")}
+                  disabled={controlador.modoEditor === "delete" || !hasAtLeastOneNode}
                 >
                   <Trash2 size={14} />
                   Eliminar
                 </Button>
-                <Button variant="primary" size="sm" onClick={controller.clearAll}>
+                <Button variant="primary" size="sm" onClick={controlador.limpiarTodo}>
                   Limpiar
                 </Button>
               </div>
@@ -274,7 +274,7 @@ export function HomePage() {
                   Anterior
                 </Button>
                 <span className={`step-badge tone-${stage.tone}`}>
-                  {toneLabel(stage.tone)} - {stageIndex + 1}/{stages.length}
+                  {etiquetaTono(stage.tone)} - {stageIndex + 1}/{stages.length}
                 </span>
                 <Button
                   variant="primary"
@@ -301,25 +301,25 @@ export function HomePage() {
               </p>
               {isConstructorMode ? (
                 <GraphCanvas
-                  graph={controller.graph}
+                  graph={controlador.grafo}
                   activeRoute={constructorActiveRoute}
-                  nodePositions={controller.positions}
-                  nodeLabels={controller.labels}
-                  selectedNodeId={controller.selectedNodeId}
-                  pendingEdgeFromId={controller.pendingEdgeFromId}
-                  mode={controller.mode}
-                  onCanvasClick={controller.handleCanvasClick}
-                  onNodeClick={controller.handleNodeClick}
-                  onEdgeClick={controller.handleEdgeClick}
+                  nodePositions={controlador.posiciones}
+                  nodeLabels={controlador.etiquetas}
+                  selectedNodeId={controlador.idNodoSeleccionado}
+                  pendingEdgeFromId={controlador.idNodoOrigenPendiente}
+                  mode={controlador.modoEditor}
+                  onCanvasClick={controlador.manejarClicEnLienzo}
+                  onNodeClick={controlador.manejarClicEnNodo}
+                  onEdgeClick={controlador.manejarClicEnArista}
                   onNodePointerDown={(nodeId) => {
-                    if (controller.mode === "select") controller.setDraggingNodeId(nodeId);
+                    if (controlador.modoEditor === "select") controlador.setIdNodoArrastrando(nodeId);
                   }}
                   onPointerMove={(x, y) => {
-                    if (controller.draggingNodeId === null || controller.mode !== "select") return;
-                    controller.setPositions((prev) => ({ ...prev, [controller.draggingNodeId!]: { x, y } }));
+                    if (controlador.idNodoArrastrando === null || controlador.modoEditor !== "select") return;
+                    controlador.setPosiciones((prev) => ({ ...prev, [controlador.idNodoArrastrando!]: { x, y } }));
                   }}
                   onPointerUp={() => {
-                    if (controller.draggingNodeId !== null) controller.setDraggingNodeId(null);
+                    if (controlador.idNodoArrastrando !== null) controlador.setIdNodoArrastrando(null);
                   }}
                   height={450}
                 />
@@ -328,7 +328,7 @@ export function HomePage() {
                   graph={baseGraph}
                   activeRoute={stage.route ?? undefined}
                   nodePositions={examplePositions}
-                  nodeLabels={baseLabels}
+                  nodeLabels={etiquetasBase}
                   selectedNodeId={exampleDraggingNodeId}
                   highlightTheme={stage.tone}
                   onNodePointerDown={(nodeId) => {
@@ -348,7 +348,7 @@ export function HomePage() {
             </article>
 
             <article className="case-side-block compact">
-              {isConstructorMode && controller.result ? (
+              {isConstructorMode && controlador.resultado ? (
                 <div className="stepper-controls">
                   <Button
                     variant="primary"
@@ -387,8 +387,8 @@ export function HomePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(isConstructorMode ? controller.graph.edges : baseGraph.edges).length > 0 ? (
-                        (isConstructorMode ? controller.graph.edges : baseGraph.edges).map((edge) => (
+                      {(isConstructorMode ? controlador.grafo.edges : baseGraph.edges).length > 0 ? (
+                        (isConstructorMode ? controlador.grafo.edges : baseGraph.edges).map((edge) => (
                           <tr key={edge.id}>
                             <td>
                               {edge.from} {edge.bidirectional ? "\u2194" : "\u2192"} {edge.to}
@@ -413,7 +413,7 @@ export function HomePage() {
                 ) : (
                   <>
                     <p>
-                      Ruta actual: <code>{stage.route ? routeToString(stage.route) : "-"}</code> -{" "}
+                      Ruta actual: <code>{stage.route ? rutaATexto(stage.route) : "-"}</code> -{" "}
                       <code>F={stage.cost ?? "-"}</code>
                     </p>
                     <p>{stage.decision}</p>
@@ -431,13 +431,13 @@ export function HomePage() {
                     <Input
                       id="route-input-inline"
                       placeholder="Pon una ruta inicial válida"
-                      value={controller.routeInput}
-                      onChange={(event) => controller.setRouteInput(event.target.value)}
+                      value={controlador.entradaRuta}
+                      onChange={(event) => controlador.setEntradaRuta(event.target.value)}
                     />
                     <p>
-                      Ruta sugerida válida: <code>{controller.autoRoutePreview || "-"}</code>
+                      Ruta sugerida válida: <code>{controlador.vistaPreviaRutaAutomatica || "-"}</code>
                     </p>
-                    <Button onClick={controller.runAlgorithm}>
+                    <Button onClick={controlador.ejecutarAlgoritmo}>
                       <Play size={14} />
                       Iniciar
                     </Button>
@@ -467,13 +467,13 @@ export function HomePage() {
             {isConstructorMode ? (
               <>
                 <h4>Resultado del constructor</h4>
-                {controller.result ? (
+                {controlador.resultado ? (
                   <>
                     <div className="neighbor-pills">
                       {constructorShowFinal ? (
                         <span className="neighbor-pill is-best">
-                          Salida exitosa: X = [{controller.result.solutionRoute.join(",")}], F ={" "}
-                          {controller.result.solutionCost}
+                          Salida exitosa: X = [{controlador.resultado.solutionRoute.join(",")}], F ={" "}
+                          {controlador.resultado.solutionCost}
                         </span>
                       ) : (
                         <span className="neighbor-pill">
@@ -493,7 +493,7 @@ export function HomePage() {
                             <DialogTitle>Árbol de búsqueda generado</DialogTitle>
                             <DialogDescription>
                               {constructorShowFinal
-                                ? `Visualización completa para tu grafo. Salida exitosa: X=[${controller.result.solutionRoute.join(",")}], F=${controller.result.solutionCost}.`
+                                ? `Visualización completa para tu grafo. Salida exitosa: X=[${controlador.resultado.solutionRoute.join(",")}], F=${controlador.resultado.solutionCost}.`
                                 : `Árbol construido hasta ${constructorRunLabel.toLowerCase()}. La salida final aparece en el último paso.`}
                             </DialogDescription>
                           </DialogHeader>
@@ -504,8 +504,8 @@ export function HomePage() {
                           ) : (
                             <SearchTreeView
                               result={constructorTreeResult}
-                              summaryVariant="none"
-                              layoutVariant="compact"
+                              varianteResumen="none"
+                              varianteDiseno="compact"
                             />
                           )}
                         </DialogContent>
@@ -554,7 +554,7 @@ export function HomePage() {
                       {treeIterationsToShow === 0 ? (
                         <p className="muted-note">Aún no hay iteraciones en el árbol. Avanza al siguiente paso.</p>
                       ) : (
-                        <SearchTreeView result={treeResultForStage} summaryVariant="none" layoutVariant="compact" />
+                        <SearchTreeView result={treeResultForStage} varianteResumen="none" varianteDiseno="compact" />
                       )}
                     </DialogContent>
                   </Dialog>
@@ -566,9 +566,9 @@ export function HomePage() {
       </Card>
 
       <Dialog
-        open={controller.edgeDialogOpen}
+        open={controlador.dialogoAristaAbierto}
         onOpenChange={(open) => {
-          controller.handleEdgeDialogOpenChange(open);
+          controlador.manejarCambioDialogoArista(open);
           if (!open) setEdgeWeightError("");
         }}
       >
@@ -576,8 +576,8 @@ export function HomePage() {
           <DialogHeader>
             <DialogTitle>Nueva conexión</DialogTitle>
             <DialogDescription>
-              {controller.pendingEdgeFromId !== null && controller.edgeDialogTarget !== null
-                ? `${controller.pendingEdgeFromId} -> ${controller.edgeDialogTarget}`
+              {controlador.idNodoOrigenPendiente !== null && controlador.objetivoDialogoArista !== null
+                ? `${controlador.idNodoOrigenPendiente} -> ${controlador.objetivoDialogoArista}`
                 : "Define peso y dirección"}
             </DialogDescription>
           </DialogHeader>
@@ -589,10 +589,10 @@ export function HomePage() {
               id="edge-weight-input-home"
               type="number"
               min={1}
-              value={controller.edgeWeightInput}
+              value={controlador.entradaPesoArista}
               onChange={(event) => {
                 const nextValue = event.target.value;
-                controller.setEdgeWeightInput(nextValue);
+                controlador.setEntradaPesoArista(nextValue);
                 if (!nextValue.trim()) {
                   setEdgeWeightError("El peso es obligatorio.");
                   return;
@@ -610,14 +610,14 @@ export function HomePage() {
             <label className="toggle-line light">
               <input
                 type="checkbox"
-                checked={controller.edgeBidirectional}
-                onChange={(event) => controller.setEdgeBidirectional(event.target.checked)}
+                checked={controlador.aristaBidireccional}
+                onChange={(event) => controlador.setAristaBidireccional(event.target.checked)}
               />
               Bidireccional
             </label>
 
             <div className="inline-actions">
-              <Button variant="outline" onClick={() => controller.setEdgeDialogOpen(false)}>
+              <Button variant="outline" onClick={() => controlador.setDialogoAristaAbierto(false)}>
                 Cancelar
               </Button>
               <Button onClick={handleConfirmEdgeCreation}>Guardar conexión</Button>
@@ -628,3 +628,5 @@ export function HomePage() {
     </div>
   );
 }
+
+

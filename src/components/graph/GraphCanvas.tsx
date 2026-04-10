@@ -1,29 +1,29 @@
 import { useMemo, useRef } from "react";
-import { getRouteStepKeys } from "@/lib/hill-climbing";
+import { obtenerClavesPasosRuta } from "@/lib/hill-climbing";
 import {
-  clamp,
-  getCurveGeometry,
-  getEdgeCurvature,
-  mergeNodePositions,
-  NODE_RADIUS,
-  shouldHighlightEdge,
-  VIEWBOX_HEIGHT,
-  VIEWBOX_WIDTH,
-  type GraphPoint,
+  ALTO_VIEWBOX,
+  ANCHO_VIEWBOX,
+  RADIO_NODO,
+  debeResaltarArista,
+  limitar,
+  obtenerCurvaturaArista,
+  obtenerGeometriaCurva,
+  unirPosicionesNodos,
+  type PuntoGrafo,
 } from "@/lib/graph-layout";
-import type { Route, WeightedGraph } from "@/lib/types";
+import type { GrafoPonderado, Ruta } from "@/lib/types";
 
-type EditorMode = "select" | "add-node" | "add-edge" | "delete";
+type ModoEditor = "select" | "add-node" | "add-edge" | "delete";
 
-interface GraphCanvasProps {
-  graph: WeightedGraph;
-  activeRoute?: Route;
+interface PropiedadesLienzoGrafo {
+  graph: GrafoPonderado;
+  activeRoute?: Ruta;
   title?: string;
-  nodePositions?: Record<number, GraphPoint>;
+  nodePositions?: Record<number, PuntoGrafo>;
   nodeLabels?: Record<number, string>;
   selectedNodeId?: number | null;
   pendingEdgeFromId?: number | null;
-  mode?: EditorMode;
+  mode?: ModoEditor;
   onCanvasClick?: (x: number, y: number) => void;
   onNodeClick?: (nodeId: number) => void;
   onEdgeClick?: (edgeId: string) => void;
@@ -49,29 +49,29 @@ export function GraphCanvas({
   onNodePointerDown,
   onPointerMove,
   onPointerUp,
-  height = VIEWBOX_HEIGHT,
+  height = ALTO_VIEWBOX,
   highlightTheme = "progress",
-}: GraphCanvasProps) {
-  const svgRef = useRef<SVGSVGElement | null>(null);
-  const steps = activeRoute ? getRouteStepKeys(activeRoute) : new Set<string>();
+}: PropiedadesLienzoGrafo) {
+  const referenciaSvg = useRef<SVGSVGElement | null>(null);
+  const pasosResaltados = activeRoute ? obtenerClavesPasosRuta(activeRoute) : new Set<string>();
 
-  const positions = useMemo(
-    () => mergeNodePositions(graph.nodes, nodePositions),
+  const posiciones = useMemo(
+    () => unirPosicionesNodos(graph.nodes, nodePositions),
     [graph.nodes, nodePositions],
   );
 
-  const toSvgPoint = (clientX: number, clientY: number): GraphPoint | null => {
-    const svg = svgRef.current;
+  const convertirAPuntoSvg = (clienteX: number, clienteY: number): PuntoGrafo | null => {
+    const svg = referenciaSvg.current;
     if (!svg) return null;
-    const matrix = svg.getScreenCTM();
-    if (!matrix) return null;
-    const point = svg.createSVGPoint();
-    point.x = clientX;
-    point.y = clientY;
-    const transformed = point.matrixTransform(matrix.inverse());
+    const matriz = svg.getScreenCTM();
+    if (!matriz) return null;
+    const punto = svg.createSVGPoint();
+    punto.x = clienteX;
+    punto.y = clienteY;
+    const transformado = punto.matrixTransform(matriz.inverse());
     return {
-      x: clamp(transformed.x, NODE_RADIUS + 8, VIEWBOX_WIDTH - NODE_RADIUS - 8),
-      y: clamp(transformed.y, NODE_RADIUS + 8, VIEWBOX_HEIGHT - NODE_RADIUS - 8),
+      x: limitar(transformado.x, RADIO_NODO + 8, ANCHO_VIEWBOX - RADIO_NODO - 8),
+      y: limitar(transformado.y, RADIO_NODO + 8, ALTO_VIEWBOX - RADIO_NODO - 8),
     };
   };
 
@@ -79,21 +79,21 @@ export function GraphCanvas({
     <div className={`graph-panel theme-${highlightTheme} ${mode === "add-node" ? "is-add-mode" : ""}`}>
       {title ? <p className="graph-title">{title}</p> : null}
       <svg
-        ref={svgRef}
-        viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+        ref={referenciaSvg}
+        viewBox={`0 0 ${ANCHO_VIEWBOX} ${ALTO_VIEWBOX}`}
         style={{ maxHeight: `${height}px` }}
         role="img"
         aria-label="Grafo interactivo"
-        onClick={(event) => {
+        onClick={(evento) => {
           if (!onCanvasClick) return;
-          if (event.target !== event.currentTarget) return;
-          const point = toSvgPoint(event.clientX, event.clientY);
-          if (point) onCanvasClick(point.x, point.y);
+          if (evento.target !== evento.currentTarget) return;
+          const punto = convertirAPuntoSvg(evento.clientX, evento.clientY);
+          if (punto) onCanvasClick(punto.x, punto.y);
         }}
-        onPointerMove={(event) => {
+        onPointerMove={(evento) => {
           if (!onPointerMove) return;
-          const point = toSvgPoint(event.clientX, event.clientY);
-          if (point) onPointerMove(point.x, point.y);
+          const punto = convertirAPuntoSvg(evento.clientX, evento.clientY);
+          if (punto) onPointerMove(punto.x, punto.y);
         }}
         onPointerUp={() => {
           if (onPointerUp) onPointerUp();
@@ -111,73 +111,81 @@ export function GraphCanvas({
           </marker>
         </defs>
 
-        <rect x={0} y={0} width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} className="graph-bg" />
+        <rect x={0} y={0} width={ANCHO_VIEWBOX} height={ALTO_VIEWBOX} className="graph-bg" />
 
-        {graph.edges.map((edge) => {
-          const from = positions[edge.from];
-          const to = positions[edge.to];
-          if (!from || !to) return null;
+        {graph.edges.map((arista) => {
+          const desde = posiciones[arista.from];
+          const hacia = posiciones[arista.to];
+          if (!desde || !hacia) return null;
 
-          const curvature = getEdgeCurvature(graph, edge.from, edge.to, edge.bidirectional);
-          const geometry = getCurveGeometry(from, to, curvature);
-          const highlighted = shouldHighlightEdge(edge.from, edge.to, edge.bidirectional, steps);
-          const cls = highlighted ? "graph-edge graph-edge-active" : "graph-edge";
-          const markerEnd = edge.bidirectional ? undefined : highlighted ? "url(#edge-arrow-active)" : "url(#edge-arrow)";
+          const curvatura = obtenerCurvaturaArista(graph, arista.from, arista.to, arista.bidirectional);
+          const geometria = obtenerGeometriaCurva(desde, hacia, curvatura);
+          const resaltada = debeResaltarArista(arista.from, arista.to, arista.bidirectional, pasosResaltados);
+          const claseArista = resaltada ? "graph-edge graph-edge-active" : "graph-edge";
+          const marcadorFinal = arista.bidirectional
+            ? undefined
+            : resaltada
+              ? "url(#edge-arrow-active)"
+              : "url(#edge-arrow)";
 
           return (
-            <g key={edge.id}>
+            <g key={arista.id}>
               <path
-                d={geometry.path}
-                className={cls}
-                markerEnd={markerEnd}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (onEdgeClick) onEdgeClick(edge.id);
+                d={geometria.ruta}
+                className={claseArista}
+                markerEnd={marcadorFinal}
+                onClick={(evento) => {
+                  evento.stopPropagation();
+                  if (onEdgeClick) onEdgeClick(arista.id);
                 }}
               />
               <rect
-                x={geometry.labelX - 20}
-                y={geometry.labelY - 12}
+                x={geometria.etiquetaX - 20}
+                y={geometria.etiquetaY - 12}
                 width={40}
                 height={18}
                 rx={6}
-                className={highlighted ? "graph-weight-bg is-active" : "graph-weight-bg"}
+                className={resaltada ? "graph-weight-bg is-active" : "graph-weight-bg"}
               />
               <text
-                x={geometry.labelX}
-                y={geometry.labelY - 0.5}
-                className={highlighted ? "graph-weight-text is-active" : "graph-weight-text"}
+                x={geometria.etiquetaX}
+                y={geometria.etiquetaY - 0.5}
+                className={resaltada ? "graph-weight-text is-active" : "graph-weight-text"}
               >
-                {edge.weight}
+                {arista.weight}
               </text>
             </g>
           );
         })}
 
-        {graph.nodes.map((node) => {
-          const point = positions[node];
-          if (!point) return null;
+        {graph.nodes.map((nodo) => {
+          const punto = posiciones[nodo];
+          if (!punto) return null;
 
-          const isSelected = selectedNodeId === node;
-          const isPending = pendingEdgeFromId === node;
-          const nodeClass = isPending ? "graph-node is-pending" : isSelected ? "graph-node is-selected" : "graph-node";
-          const label = nodeLabels?.[node] ?? String(node);
+          const estaSeleccionado = selectedNodeId === nodo;
+          const esPendiente = pendingEdgeFromId === nodo;
+          const claseNodo = esPendiente
+            ? "graph-node is-pending"
+            : estaSeleccionado
+              ? "graph-node is-selected"
+              : "graph-node";
+          const etiqueta = nodeLabels?.[nodo] ?? String(nodo);
 
           return (
             <g
-              key={node}
-              onPointerDown={(event) => {
-                event.stopPropagation();
-                if (onNodePointerDown) onNodePointerDown(node);
+              key={nodo}
+              onPointerDown={(evento) => {
+                evento.stopPropagation();
+                if (onNodePointerDown) onNodePointerDown(nodo);
               }}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (onNodeClick) onNodeClick(node);
+              onClick={(evento) => {
+                evento.stopPropagation();
+                if (onNodeClick) onNodeClick(nodo);
               }}
             >
-              <circle cx={point.x} cy={point.y} r={NODE_RADIUS} className={nodeClass} />
-              <text x={point.x} y={point.y + 1} className="graph-node-label">
-                {label}
+              <circle cx={punto.x} cy={punto.y} r={RADIO_NODO} className={claseNodo} />
+              <text x={punto.x} y={punto.y + 1} className="graph-node-label">
+                {etiqueta}
               </text>
             </g>
           );
@@ -187,4 +195,4 @@ export function GraphCanvas({
   );
 }
 
-export type { EditorMode };
+export type EditorMode = ModoEditor;

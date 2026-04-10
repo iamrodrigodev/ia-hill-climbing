@@ -1,356 +1,408 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  cloneGraph,
-  getEdgeCost,
-  hillClimb,
-  isRouteValid,
-  parseRoute,
-  routeToString,
+  clonarGrafo,
+  escalarColina,
+  esRutaValida,
+  obtenerCostoArista,
+  parsearRuta,
+  rutaATexto,
 } from "@/lib/hill-climbing";
 import { presets } from "@/lib/mock-data";
 import {
-  BASE_POSITIONS,
-  formatDefaultRoute,
-  nextNodeId,
-  removeNode,
-  upsertEdge,
-  type Point,
+  POSICIONES_BASE,
+  agregarOActualizarArista,
+  eliminarNodo,
+  formatearRutaPorDefecto,
+  siguienteIdNodo,
+  type Punto,
 } from "@/lib/simulator-helpers";
-import type { HillClimbResult, Route, WeightedGraph } from "@/lib/types";
+import type { GrafoPonderado, ResultadoEscalada, Ruta } from "@/lib/types";
 import type { EditorMode } from "@/components/graph/GraphCanvas";
 
-export type ScenarioSource = "example" | "custom";
-const INTERNAL_MAX_ITERATIONS = 1000;
+export type FuenteEscenario = "example" | "custom";
+const MAXIMO_INTERNO_ITERACIONES = 1000;
 
-function isValidRoutePath(route: Route, graph: WeightedGraph): boolean {
-  for (let i = 0; i < route.length - 1; i += 1) {
-    const cost = getEdgeCost(graph, route[i], route[i + 1]);
-    if (!Number.isFinite(cost)) return false;
+function esRutaConsecutivaValida(ruta: Ruta, grafo: GrafoPonderado): boolean {
+  for (let i = 0; i < ruta.length - 1; i += 1) {
+    const costo = obtenerCostoArista(grafo, ruta[i], ruta[i + 1]);
+    if (!Number.isFinite(costo)) return false;
   }
   return true;
 }
 
-function findValidAutoRoute(graph: WeightedGraph): Route | null {
-  if (graph.nodes.length === 0) return null;
-  if (graph.nodes.length === 1) return [...graph.nodes];
+function encontrarRutaAutomaticaValida(grafo: GrafoPonderado): Ruta | null {
+  if (grafo.nodes.length === 0) return null;
+  if (grafo.nodes.length === 1) return [...grafo.nodes];
 
-  const ordered = [...graph.nodes].sort((a, b) => a - b);
-  if (isValidRoutePath(ordered, graph)) return ordered;
+  const nodosOrdenados = [...grafo.nodes].sort((a, b) => a - b);
+  if (esRutaConsecutivaValida(nodosOrdenados, grafo)) return nodosOrdenados;
 
-  const limitForBacktracking = 9;
-  if (ordered.length > limitForBacktracking) return null;
+  const limiteBacktracking = 9;
+  if (nodosOrdenados.length > limiteBacktracking) return null;
 
-  const n = ordered.length;
-  const used = new Set<number>();
-  const path: number[] = [];
+  const totalNodos = nodosOrdenados.length;
+  const nodosUsados = new Set<number>();
+  const rutaParcial: number[] = [];
 
-  const dfs = (current: number): boolean => {
-    path.push(current);
-    used.add(current);
+  const buscar = (actual: number): boolean => {
+    rutaParcial.push(actual);
+    nodosUsados.add(actual);
 
-    if (path.length === n) return true;
+    if (rutaParcial.length === totalNodos) return true;
 
-    for (const next of ordered) {
-      if (used.has(next)) continue;
-      const cost = getEdgeCost(graph, current, next);
-      if (!Number.isFinite(cost)) continue;
-      if (dfs(next)) return true;
+    for (const siguiente of nodosOrdenados) {
+      if (nodosUsados.has(siguiente)) continue;
+      const costo = obtenerCostoArista(grafo, actual, siguiente);
+      if (!Number.isFinite(costo)) continue;
+      if (buscar(siguiente)) return true;
     }
 
-    used.delete(current);
-    path.pop();
+    nodosUsados.delete(actual);
+    rutaParcial.pop();
     return false;
   };
 
-  for (const start of ordered) {
-    path.length = 0;
-    used.clear();
-    if (dfs(start)) return [...path];
+  for (const inicio of nodosOrdenados) {
+    rutaParcial.length = 0;
+    nodosUsados.clear();
+    if (buscar(inicio)) return [...rutaParcial];
   }
 
   return null;
 }
 
-export function useSimulatorController() {
-  const [graph, setGraph] = useState<WeightedGraph>({ nodes: [], edges: [] });
-  const [positions, setPositions] = useState<Record<number, Point>>({});
-  const [labels, setLabels] = useState<Record<number, string>>({});
-  const [mode, setMode] = useState<EditorMode>("select");
-  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
-  const [pendingEdgeFromId, setPendingEdgeFromId] = useState<number | null>(null);
-  const [draggingNodeId, setDraggingNodeId] = useState<number | null>(null);
+export function useControladorSimulador() {
+  const [grafo, setGrafo] = useState<GrafoPonderado>({ nodes: [], edges: [] });
+  const [posiciones, setPosiciones] = useState<Record<number, Punto>>({});
+  const [etiquetas, setEtiquetas] = useState<Record<number, string>>({});
+  const [modoEditor, setModoEditor] = useState<EditorMode>("select");
+  const [idNodoSeleccionado, setIdNodoSeleccionado] = useState<number | null>(null);
+  const [idNodoOrigenPendiente, setIdNodoOrigenPendiente] = useState<number | null>(null);
+  const [idNodoArrastrando, setIdNodoArrastrando] = useState<number | null>(null);
 
-  const [routeInput, setRouteInput] = useState("");
-  const [maxIterationsInput, setMaxIterationsInput] = useState("30");
-  const [result, setResult] = useState<HillClimbResult | null>(null);
-  const [selectedIteration, setSelectedIteration] = useState(1);
-  const [graphSource, setGraphSource] = useState<ScenarioSource>("custom");
-  const [lastRunSource, setLastRunSource] = useState<ScenarioSource | null>(null);
+  const [entradaRuta, setEntradaRuta] = useState("");
+  const [entradaMaxIteraciones, setEntradaMaxIteraciones] = useState("30");
+  const [resultado, setResultado] = useState<ResultadoEscalada | null>(null);
+  const [iteracionSeleccionada, setIteracionSeleccionada] = useState(1);
+  const [fuenteEscenario, setFuenteEscenario] = useState<FuenteEscenario>("custom");
+  const [fuenteUltimaEjecucion, setFuenteUltimaEjecucion] = useState<FuenteEscenario | null>(null);
 
-  const [edgeDialogOpen, setEdgeDialogOpen] = useState(false);
-  const [edgeDialogTarget, setEdgeDialogTarget] = useState<number | null>(null);
-  const [edgeWeightInput, setEdgeWeightInput] = useState("100");
-  const [edgeBidirectional, setEdgeBidirectional] = useState(true);
+  const [dialogoAristaAbierto, setDialogoAristaAbierto] = useState(false);
+  const [objetivoDialogoArista, setObjetivoDialogoArista] = useState<number | null>(null);
+  const [entradaPesoArista, setEntradaPesoArista] = useState("100");
+  const [aristaBidireccional, setAristaBidireccional] = useState(true);
 
-  const activeIteration = result?.iterations.find((iteration) => iteration.iteration === selectedIteration) ?? null;
-  const activeRoute = activeIteration?.currentRoute ?? result?.solutionRoute;
-  const autoRoutePreview = useMemo(() => {
-    const route = findValidAutoRoute(graph);
-    return route ? formatDefaultRoute(route) : "";
-  }, [graph]);
+  const iteracionActiva =
+    resultado?.iterations.find((iteracion) => iteracion.iteration === iteracionSeleccionada) ?? null;
+  const rutaActiva = iteracionActiva?.currentRoute ?? resultado?.solutionRoute;
 
-  const costSeries = useMemo(() => {
-    if (!result) return [];
-    const values = [result.startCost];
-    result.iterations.forEach((iteration) => {
-      if (iteration.moved) values.push(iteration.bestNeighbor.cost);
+  const vistaPreviaRutaAutomatica = useMemo(() => {
+    const ruta = encontrarRutaAutomaticaValida(grafo);
+    return ruta ? formatearRutaPorDefecto(ruta) : "";
+  }, [grafo]);
+
+  const serieCostos = useMemo(() => {
+    if (!resultado) return [];
+    const valores = [resultado.startCost];
+    resultado.iterations.forEach((iteracion) => {
+      if (iteracion.moved) valores.push(iteracion.bestNeighbor.cost);
     });
-    return values;
-  }, [result]);
+    return valores;
+  }, [resultado]);
 
-  const setEditorMode = (nextMode: EditorMode) => {
-    setMode(nextMode);
-    if (nextMode !== "add-edge") setPendingEdgeFromId(null);
-    if (nextMode !== "select") setSelectedNodeId(null);
+  const fijarModoEditor = (siguienteModo: EditorMode) => {
+    setModoEditor(siguienteModo);
+    if (siguienteModo !== "add-edge") setIdNodoOrigenPendiente(null);
+    if (siguienteModo !== "select") setIdNodoSeleccionado(null);
   };
 
-  const handleCanvasClick = (x: number, y: number) => {
-    if (mode === "add-node") {
-      const nodeId = nextNodeId(graph.nodes);
-      setGraph((prev) => ({ ...prev, nodes: [...prev.nodes, nodeId] }));
-      setPositions((prev) => ({ ...prev, [nodeId]: { x, y } }));
-      setLabels((prev) => ({ ...prev, [nodeId]: String(nodeId) }));
-      setGraphSource("custom");
-      if (!routeInput) setRouteInput(formatDefaultRoute([...graph.nodes, nodeId]));
-      toast.success(`Nodo ${nodeId} agregado.`);
+  const manejarClicEnLienzo = (x: number, y: number) => {
+    if (modoEditor === "add-node") {
+      const idNodo = siguienteIdNodo(grafo.nodes);
+      setGrafo((previo) => ({ ...previo, nodes: [...previo.nodes, idNodo] }));
+      setPosiciones((previo) => ({ ...previo, [idNodo]: { x, y } }));
+      setEtiquetas((previo) => ({ ...previo, [idNodo]: String(idNodo) }));
+      setFuenteEscenario("custom");
+      if (!entradaRuta) setEntradaRuta(formatearRutaPorDefecto([...grafo.nodes, idNodo]));
+      toast.success(`Nodo ${idNodo} agregado.`);
       return;
     }
 
-    if (mode === "select") {
-      setSelectedNodeId(null);
+    if (modoEditor === "select") {
+      setIdNodoSeleccionado(null);
     }
   };
 
-  const handleNodeClick = (nodeId: number) => {
-    if (mode === "delete") {
-      setGraph((prev) => removeNode(prev, nodeId));
-      setPositions((prev) => {
-        const next = { ...prev };
-        delete next[nodeId];
-        return next;
+  const manejarClicEnNodo = (idNodo: number) => {
+    if (modoEditor === "delete") {
+      setGrafo((previo) => eliminarNodo(previo, idNodo));
+      setPosiciones((previo) => {
+        const siguiente = { ...previo };
+        delete siguiente[idNodo];
+        return siguiente;
       });
-      setLabels((prev) => {
-        const next = { ...prev };
-        delete next[nodeId];
-        return next;
+      setEtiquetas((previo) => {
+        const siguiente = { ...previo };
+        delete siguiente[idNodo];
+        return siguiente;
       });
-      setGraphSource("custom");
-      if (selectedNodeId === nodeId) setSelectedNodeId(null);
-      toast.success(`Nodo ${nodeId} eliminado.`);
+      setFuenteEscenario("custom");
+      if (idNodoSeleccionado === idNodo) setIdNodoSeleccionado(null);
+      toast.success(`Nodo ${idNodo} eliminado.`);
       return;
     }
 
-    if (mode === "add-edge") {
-      if (pendingEdgeFromId === null) {
-        setPendingEdgeFromId(nodeId);
-        toast.info(`Nodo origen: ${nodeId}. Ahora elige un nodo destino.`);
+    if (modoEditor === "add-edge") {
+      if (idNodoOrigenPendiente === null) {
+        setIdNodoOrigenPendiente(idNodo);
+        toast.info(`Nodo origen: ${idNodo}. Ahora elige un nodo destino.`);
         return;
       }
 
-      if (pendingEdgeFromId === nodeId) {
+      if (idNodoOrigenPendiente === idNodo) {
         toast.error("Selecciona un nodo destino distinto.");
         return;
       }
 
-      setEdgeDialogTarget(nodeId);
-      setEdgeDialogOpen(true);
+      setObjetivoDialogoArista(idNodo);
+      setDialogoAristaAbierto(true);
       return;
     }
 
-    setSelectedNodeId(nodeId);
+    setIdNodoSeleccionado(idNodo);
   };
 
-  const handleEdgeClick = (edgeId: string) => {
-    if (mode !== "delete") return;
-    setGraph((prev) => ({
-      ...prev,
-      edges: prev.edges.filter((edge) => edge.id !== edgeId),
+  const manejarClicEnArista = (idArista: string) => {
+    if (modoEditor !== "delete") return;
+    setGrafo((previo) => ({
+      ...previo,
+      edges: previo.edges.filter((arista) => arista.id !== idArista),
     }));
     toast.success("Conexión eliminada.");
   };
 
-  const confirmEdgeCreation = () => {
-    if (pendingEdgeFromId === null || edgeDialogTarget === null) {
-      setEdgeDialogOpen(false);
+  const confirmarCreacionArista = () => {
+    if (idNodoOrigenPendiente === null || objetivoDialogoArista === null) {
+      setDialogoAristaAbierto(false);
       return false;
     }
 
-    const normalizedWeight = edgeWeightInput.trim();
-    if (!normalizedWeight) {
+    const pesoNormalizado = entradaPesoArista.trim();
+    if (!pesoNormalizado) {
       toast.error("El peso es obligatorio.");
       return false;
     }
 
-    const parsedWeight = Number(normalizedWeight);
-    if (!Number.isFinite(parsedWeight) || parsedWeight <= 0) {
+    const pesoParseado = Number(pesoNormalizado);
+    if (!Number.isFinite(pesoParseado) || pesoParseado <= 0) {
       toast.error("El peso debe ser un número mayor que 0.");
       return false;
     }
-    const weight = Math.floor(parsedWeight);
 
-    setGraph((prev) => upsertEdge(prev, pendingEdgeFromId, edgeDialogTarget, weight, edgeBidirectional));
-    setGraphSource("custom");
-    setEdgeDialogOpen(false);
-    setPendingEdgeFromId(null);
-    setEdgeDialogTarget(null);
-    setEdgeWeightInput("100");
-    setEdgeBidirectional(true);
+    const peso = Math.floor(pesoParseado);
+    setGrafo((previo) =>
+      agregarOActualizarArista(previo, idNodoOrigenPendiente, objetivoDialogoArista, peso, aristaBidireccional),
+    );
+    setFuenteEscenario("custom");
+    setDialogoAristaAbierto(false);
+    setIdNodoOrigenPendiente(null);
+    setObjetivoDialogoArista(null);
+    setEntradaPesoArista("100");
+    setAristaBidireccional(true);
     toast.success("Conexión creada.");
     return true;
   };
 
-  const handleEdgeDialogOpenChange = (open: boolean) => {
-    setEdgeDialogOpen(open);
-    if (!open) {
-      setEdgeDialogTarget(null);
-      setPendingEdgeFromId(null);
+  const manejarCambioDialogoArista = (abierto: boolean) => {
+    setDialogoAristaAbierto(abierto);
+    if (!abierto) {
+      setObjetivoDialogoArista(null);
+      setIdNodoOrigenPendiente(null);
     }
   };
 
-  const runAlgorithmWithRoute = (routeText?: string) => {
-    if (graph.nodes.length < 2) {
+  const ejecutarConRuta = (textoRuta?: string) => {
+    if (grafo.nodes.length < 2) {
       toast.error("Agrega al menos 2 nodos para ejecutar el algoritmo.");
       return;
     }
 
-    const sourceRouteText = routeText ?? routeInput;
-    const route = parseRoute(sourceRouteText);
-    if (!isRouteValid(route, graph.nodes)) {
+    const origenTextoRuta = textoRuta ?? entradaRuta;
+    const ruta = parsearRuta(origenTextoRuta);
+    if (!esRutaValida(ruta, grafo.nodes)) {
       toast.error("Ruta inválida. Debe incluir exactamente todos los nodos del grafo.");
       return;
     }
 
-    for (let i = 0; i < route.length - 1; i += 1) {
-      const cost = getEdgeCost(graph, route[i], route[i + 1]);
-      if (!Number.isFinite(cost)) {
-        toast.error(`No existe conexión entre ${route[i]} y ${route[i + 1]}.`);
+    for (let i = 0; i < ruta.length - 1; i += 1) {
+      const costo = obtenerCostoArista(grafo, ruta[i], ruta[i + 1]);
+      if (!Number.isFinite(costo)) {
+        toast.error(`No existe conexión entre ${ruta[i]} y ${ruta[i + 1]}.`);
         return;
       }
     }
 
-    const next = hillClimb(graph, route, INTERNAL_MAX_ITERATIONS);
-    setResult(next);
-    setLastRunSource(graphSource);
-    setSelectedIteration(1);
-    toast.success(`Resultado: ${routeToString(next.solutionRoute)} con F=${next.solutionCost}.`);
+    const siguiente = escalarColina(grafo, ruta, MAXIMO_INTERNO_ITERACIONES);
+    setResultado(siguiente);
+    setFuenteUltimaEjecucion(fuenteEscenario);
+    setIteracionSeleccionada(1);
+    toast.success(`Resultado: ${rutaATexto(siguiente.solutionRoute)} con F=${siguiente.solutionCost}.`);
   };
 
-  const runAlgorithm = () => {
-    runAlgorithmWithRoute();
+  const ejecutarAlgoritmo = () => {
+    ejecutarConRuta();
   };
 
-  const runAlgorithmAuto = () => {
-    if (graph.nodes.length < 2) {
+  const ejecutarAlgoritmoAuto = () => {
+    if (grafo.nodes.length < 2) {
       toast.error("Agrega al menos 2 nodos para ejecutar el algoritmo.");
       return;
     }
 
-    const route = findValidAutoRoute(graph);
-    if (!route || !isRouteValid(route, graph.nodes)) {
+    const ruta = encontrarRutaAutomaticaValida(grafo);
+    if (!ruta || !esRutaValida(ruta, grafo.nodes)) {
       toast.error("No se pudo generar una ruta válida con las conexiones actuales del grafo.");
       return;
     }
 
-    setRouteInput(formatDefaultRoute(route));
-    const next = hillClimb(graph, route, INTERNAL_MAX_ITERATIONS);
-    setResult(next);
-    setLastRunSource(graphSource);
-    setSelectedIteration(1);
-    toast.success(`Resultado: ${routeToString(next.solutionRoute)} con F=${next.solutionCost}.`);
+    setEntradaRuta(formatearRutaPorDefecto(ruta));
+    const siguiente = escalarColina(grafo, ruta, MAXIMO_INTERNO_ITERACIONES);
+    setResultado(siguiente);
+    setFuenteUltimaEjecucion(fuenteEscenario);
+    setIteracionSeleccionada(1);
+    toast.success(`Resultado: ${rutaATexto(siguiente.solutionRoute)} con F=${siguiente.solutionCost}.`);
   };
 
-  const clearAll = () => {
-    setGraph({ nodes: [], edges: [] });
-    setPositions({});
-    setLabels({});
-    setMode("select");
-    setSelectedNodeId(null);
-    setPendingEdgeFromId(null);
-    setRouteInput("");
-    setResult(null);
-    setGraphSource("custom");
-    setLastRunSource(null);
+  const limpiarTodo = () => {
+    setGrafo({ nodes: [], edges: [] });
+    setPosiciones({});
+    setEtiquetas({});
+    setModoEditor("select");
+    setIdNodoSeleccionado(null);
+    setIdNodoOrigenPendiente(null);
+    setEntradaRuta("");
+    setResultado(null);
+    setFuenteEscenario("custom");
+    setFuenteUltimaEjecucion(null);
     toast.success("Lienzo limpiado.");
   };
 
-  const loadBaseCase = () => {
-    const preset = presets.find((item) => item.id === "base") ?? presets[0];
-    const scenario = cloneGraph(preset.graph);
-    const nextLabels: Record<number, string> = {};
-    scenario.nodes.forEach((node) => {
-      nextLabels[node] = String(node);
+  const cargarCasoBase = () => {
+    const preajuste = presets.find((item) => item.id === "base") ?? presets[0];
+    const escenario = clonarGrafo(preajuste.graph);
+    const etiquetasIniciales: Record<number, string> = {};
+    escenario.nodes.forEach((nodo) => {
+      etiquetasIniciales[nodo] = String(nodo);
     });
 
-    setGraph(scenario);
-    setLabels(nextLabels);
-    setPositions(BASE_POSITIONS);
-    setRouteInput(preset.defaultRoute.join(","));
-    setResult(hillClimb(scenario, preset.defaultRoute, INTERNAL_MAX_ITERATIONS));
-    setSelectedIteration(1);
-    setMode("select");
-    setPendingEdgeFromId(null);
-    setGraphSource("example");
-    setLastRunSource("example");
+    setGrafo(escenario);
+    setEtiquetas(etiquetasIniciales);
+    setPosiciones(POSICIONES_BASE);
+    setEntradaRuta(preajuste.defaultRoute.join(","));
+    setResultado(escalarColina(escenario, preajuste.defaultRoute, MAXIMO_INTERNO_ITERACIONES));
+    setIteracionSeleccionada(1);
+    setModoEditor("select");
+    setIdNodoOrigenPendiente(null);
+    setFuenteEscenario("example");
+    setFuenteUltimaEjecucion("example");
     toast.info("Caso base cargado.");
   };
 
-  const applyAutoRoute = () => {
-    const ordered = [...graph.nodes].sort((a, b) => a - b);
-    setRouteInput(formatDefaultRoute(ordered));
+  const aplicarRutaAutomatica = () => {
+    const ordenados = [...grafo.nodes].sort((a, b) => a - b);
+    setEntradaRuta(formatearRutaPorDefecto(ordenados));
   };
 
   return {
-    graph,
-    positions,
-    labels,
-    mode,
-    selectedNodeId,
-    pendingEdgeFromId,
-    draggingNodeId,
-    routeInput,
-    maxIterationsInput,
-    result,
-    selectedIteration,
-    graphSource,
-    lastRunSource,
-    edgeDialogOpen,
-    edgeDialogTarget,
-    edgeWeightInput,
-    edgeBidirectional,
-    activeRoute,
-    autoRoutePreview,
-    costSeries,
-    setRouteInput,
-    setMaxIterationsInput,
-    setSelectedIteration,
-    setEdgeWeightInput,
-    setEdgeBidirectional,
-    setLabels,
-    setDraggingNodeId,
-    setEdgeDialogOpen,
-    handleEdgeDialogOpenChange,
-    setEditorMode,
-    handleCanvasClick,
-    handleNodeClick,
-    handleEdgeClick,
-    confirmEdgeCreation,
-    runAlgorithm,
-    runAlgorithmWithRoute,
-    runAlgorithmAuto,
-    clearAll,
-    loadBaseCase,
-    applyAutoRoute,
-    setPositions,
+    // Nombres en español
+    grafo,
+    posiciones,
+    etiquetas,
+    modoEditor,
+    idNodoSeleccionado,
+    idNodoOrigenPendiente,
+    idNodoArrastrando,
+    entradaRuta,
+    entradaMaxIteraciones,
+    resultado,
+    iteracionSeleccionada,
+    fuenteEscenario,
+    fuenteUltimaEjecucion,
+    dialogoAristaAbierto,
+    objetivoDialogoArista,
+    entradaPesoArista,
+    aristaBidireccional,
+    rutaActiva,
+    vistaPreviaRutaAutomatica,
+    serieCostos,
+    setEntradaRuta,
+    setEntradaMaxIteraciones,
+    setIteracionSeleccionada,
+    setEntradaPesoArista,
+    setAristaBidireccional,
+    setEtiquetas,
+    setIdNodoArrastrando,
+    setDialogoAristaAbierto,
+    manejarCambioDialogoArista,
+    fijarModoEditor,
+    manejarClicEnLienzo,
+    manejarClicEnNodo,
+    manejarClicEnArista,
+    confirmarCreacionArista,
+    ejecutarAlgoritmo,
+    ejecutarConRuta,
+    ejecutarAlgoritmoAuto,
+    limpiarTodo,
+    cargarCasoBase,
+    aplicarRutaAutomatica,
+    setPosiciones,
+
+    // Alias de compatibilidad temporal
+    graph: grafo,
+    positions: posiciones,
+    labels: etiquetas,
+    mode: modoEditor,
+    selectedNodeId: idNodoSeleccionado,
+    pendingEdgeFromId: idNodoOrigenPendiente,
+    draggingNodeId: idNodoArrastrando,
+    routeInput: entradaRuta,
+    maxIterationsInput: entradaMaxIteraciones,
+    result: resultado,
+    selectedIteration: iteracionSeleccionada,
+    graphSource: fuenteEscenario,
+    lastRunSource: fuenteUltimaEjecucion,
+    edgeDialogOpen: dialogoAristaAbierto,
+    edgeDialogTarget: objetivoDialogoArista,
+    edgeWeightInput: entradaPesoArista,
+    edgeBidirectional: aristaBidireccional,
+    activeRoute: rutaActiva,
+    autoRoutePreview: vistaPreviaRutaAutomatica,
+    costSeries: serieCostos,
+    setRouteInput: setEntradaRuta,
+    setMaxIterationsInput: setEntradaMaxIteraciones,
+    setSelectedIteration: setIteracionSeleccionada,
+    setEdgeWeightInput: setEntradaPesoArista,
+    setEdgeBidirectional: setAristaBidireccional,
+    setLabels: setEtiquetas,
+    setDraggingNodeId: setIdNodoArrastrando,
+    setEdgeDialogOpen: setDialogoAristaAbierto,
+    handleEdgeDialogOpenChange: manejarCambioDialogoArista,
+    setEditorMode: fijarModoEditor,
+    handleCanvasClick: manejarClicEnLienzo,
+    handleNodeClick: manejarClicEnNodo,
+    handleEdgeClick: manejarClicEnArista,
+    confirmEdgeCreation: confirmarCreacionArista,
+    runAlgorithm: ejecutarAlgoritmo,
+    runAlgorithmWithRoute: ejecutarConRuta,
+    runAlgorithmAuto: ejecutarAlgoritmoAuto,
+    clearAll: limpiarTodo,
+    loadBaseCase: cargarCasoBase,
+    applyAutoRoute: aplicarRutaAutomatica,
+    setPositions: setPosiciones,
   };
 }
+
+export const useSimulatorController = useControladorSimulador;
+export const useControladorDelSimulador = useControladorSimulador;
+export type ScenarioSource = FuenteEscenario;

@@ -1,58 +1,67 @@
-import type { WeightedGraph } from "@/lib/types";
-import { createEdge } from "@/lib/hill-climbing";
+import type { GrafoPonderado } from "@/lib/types";
+import { crearArista } from "@/lib/hill-climbing";
 
-export interface Point {
+export interface Punto {
   x: number;
   y: number;
 }
 
-export function nextNodeId(nodes: number[]): number {
-  if (nodes.length === 0) return 0;
-  return Math.max(...nodes) + 1;
+export function siguienteIdNodo(nodos: number[]): number {
+  if (nodos.length === 0) return 0;
+  return Math.max(...nodos) + 1;
 }
 
-export function formatDefaultRoute(nodes: number[]): string {
-  return nodes.join(",");
+export function formatearRutaPorDefecto(nodos: number[]): string {
+  return nodos.join(",");
 }
 
-export function parseIterations(value: string): number {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return 30;
-  return Math.max(1, Math.min(200, Math.floor(parsed)));
+export function parsearIteraciones(valor: string): number {
+  const numero = Number(valor);
+  if (!Number.isFinite(numero)) return 30;
+  return Math.max(1, Math.min(200, Math.floor(numero)));
 }
 
-export function removeNode(graph: WeightedGraph, nodeId: number): WeightedGraph {
+export function eliminarNodo(grafo: GrafoPonderado, idNodo: number): GrafoPonderado {
   return {
-    nodes: graph.nodes.filter((node) => node !== nodeId),
-    edges: graph.edges.filter((edge) => edge.from !== nodeId && edge.to !== nodeId),
+    nodes: grafo.nodes.filter((nodo) => nodo !== idNodo),
+    edges: grafo.edges.filter((arista) => arista.from !== idNodo && arista.to !== idNodo),
   };
 }
 
-export function upsertEdge(
-  graph: WeightedGraph,
-  from: number,
-  to: number,
-  weight: number,
-  bidirectional: boolean,
-): WeightedGraph {
-  const kept = graph.edges.filter((edge) => {
-    const same = edge.from === from && edge.to === to;
-    const reverse = edge.from === to && edge.to === from;
-    if (bidirectional) return !(same || reverse);
-    if (same) return false;
-    if (edge.bidirectional && (same || reverse)) return false;
+export function agregarOActualizarArista(
+  grafo: GrafoPonderado,
+  desde: number,
+  hacia: number,
+  peso: number,
+  bidireccional: boolean,
+): GrafoPonderado {
+  const aristasMantenidas = grafo.edges.filter((arista) => {
+    const misma = arista.from === desde && arista.to === hacia;
+    const reversa = arista.from === hacia && arista.to === desde;
+    if (bidireccional) return !(misma || reversa);
+    if (misma) return false;
+    if (arista.bidirectional && (misma || reversa)) return false;
     return true;
   });
 
   return {
-    ...graph,
-    edges: [...kept, createEdge(from, to, weight, bidirectional)],
+    ...grafo,
+    edges: [...aristasMantenidas, crearArista(desde, hacia, peso, bidireccional)],
   };
 }
 
-export const BASE_POSITIONS: Record<number, Point> = {
+export const POSICIONES_BASE: Record<number, Punto> = {
   0: { x: 120, y: 120 },
   1: { x: 350, y: 130 },
   2: { x: 640, y: 130 },
   3: { x: 260, y: 300 },
 };
+
+// Alias de compatibilidad temporal.
+export type Point = Punto;
+export const nextNodeId = siguienteIdNodo;
+export const formatDefaultRoute = formatearRutaPorDefecto;
+export const parseIterations = parsearIteraciones;
+export const removeNode = eliminarNodo;
+export const upsertEdge = agregarOActualizarArista;
+export const BASE_POSITIONS = POSICIONES_BASE;

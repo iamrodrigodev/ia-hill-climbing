@@ -1,48 +1,58 @@
-export type NodeId = number;
-export type Route = NodeId[];
+export type IdNodo = number;
+export type Ruta = IdNodo[];
 
-export interface GraphEdge {
+export interface AristaGrafo {
   id: string;
-  from: NodeId;
-  to: NodeId;
+  from: IdNodo;
+  to: IdNodo;
   weight: number;
   bidirectional: boolean;
 }
 
-export interface WeightedGraph {
-  nodes: NodeId[];
-  edges: GraphEdge[];
+export interface GrafoPonderado {
+  nodes: IdNodo[];
+  edges: AristaGrafo[];
 }
 
-export interface NeighborCandidate {
-  route: Route;
+export interface CandidatoVecino {
+  route: Ruta;
   cost: number;
   swap: [number, number];
 }
 
-export interface HillClimbIteration {
+export interface IteracionEscalada {
   iteration: number;
-  currentRoute: Route;
+  currentRoute: Ruta;
   currentCost: number;
-  neighbors: NeighborCandidate[];
-  bestNeighbor: NeighborCandidate;
+  neighbors: CandidatoVecino[];
+  bestNeighbor: CandidatoVecino;
   moved: boolean;
 }
 
-export interface HillClimbResult {
-  startRoute: Route;
+export interface ResultadoEscalada {
+  startRoute: Ruta;
   startCost: number;
-  iterations: HillClimbIteration[];
-  solutionRoute: Route;
+  iterations: IteracionEscalada[];
+  solutionRoute: Ruta;
   solutionCost: number;
   solutionIteration: number;
   stopReason: "local-optimum" | "max-iterations";
 }
 
-export interface GraphPreset {
+export interface PreajusteGrafo {
   id: string;
   label: string;
   description: string;
-  graph: WeightedGraph;
-  defaultRoute: Route;
+  graph: GrafoPonderado;
+  defaultRoute: Ruta;
 }
+
+// Aliases de compatibilidad temporal.
+export type NodeId = IdNodo;
+export type Route = Ruta;
+export type GraphEdge = AristaGrafo;
+export type WeightedGraph = GrafoPonderado;
+export type NeighborCandidate = CandidatoVecino;
+export type HillClimbIteration = IteracionEscalada;
+export type HillClimbResult = ResultadoEscalada;
+export type GraphPreset = PreajusteGrafo;

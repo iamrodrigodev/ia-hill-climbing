@@ -8,16 +8,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { routeToString } from "@/lib/hill-climbing";
-import { useSimulatorController } from "@/lib/use-simulator-controller";
+import { rutaATexto } from "@/lib/hill-climbing";
+import { useControladorSimulador } from "@/lib/use-simulator-controller";
 
 export function SimulatorPage() {
-  const controller = useSimulatorController();
-  const sourceLabel = controller.graphSource === "example" ? "Ejemplo de clase" : "Construido por ti";
+  const controlador = useControladorSimulador();
+  const sourceLabel = controlador.fuenteEscenario === "example" ? "Ejemplo de clase" : "Construido por ti";
   const runSourceLabel =
-    controller.lastRunSource === "example"
+    controlador.fuenteUltimaEjecucion === "example"
       ? "Resultado del ejemplo de clase"
-      : controller.lastRunSource === "custom"
+      : controlador.fuenteUltimaEjecucion === "custom"
         ? "Resultado generado por ti"
         : "Sin ejecución";
 
@@ -36,13 +36,13 @@ export function SimulatorPage() {
           <CardHeader>
             <CardTitle>Lienzo del grafo</CardTitle>
             <CardDescription>
-              Modo actual: <strong>{controller.mode}</strong>
-              {controller.mode === "add-edge" && controller.pendingEdgeFromId !== null
-                ? ` - origen ${controller.pendingEdgeFromId}`
+              Modo actual: <strong>{controlador.modoEditor}</strong>
+              {controlador.modoEditor === "add-edge" && controlador.idNodoOrigenPendiente !== null
+                ? ` - origen ${controlador.idNodoOrigenPendiente}`
                 : ""}
             </CardDescription>
             <div className="source-line">
-              <span className={`source-chip ${controller.graphSource === "example" ? "is-example" : "is-custom"}`}>
+              <span className={`source-chip ${controlador.fuenteEscenario === "example" ? "is-example" : "is-custom"}`}>
                 {sourceLabel}
               </span>
             </div>
@@ -50,33 +50,33 @@ export function SimulatorPage() {
           <CardContent>
             <div className="mode-toolbar">
               <Button
-                variant={controller.mode === "select" ? "primary" : "outline"}
+                variant={controlador.modoEditor === "select" ? "primary" : "outline"}
                 size="sm"
-                onClick={() => controller.setEditorMode("select")}
+                onClick={() => controlador.fijarModoEditor("select")}
               >
                 <MousePointer2 size={14} />
                 Mover
               </Button>
               <Button
-                variant={controller.mode === "add-node" ? "primary" : "outline"}
+                variant={controlador.modoEditor === "add-node" ? "primary" : "outline"}
                 size="sm"
-                onClick={() => controller.setEditorMode("add-node")}
+                onClick={() => controlador.fijarModoEditor("add-node")}
               >
                 <PlusCircle size={14} />
                 Nodo
               </Button>
               <Button
-                variant={controller.mode === "add-edge" ? "primary" : "outline"}
+                variant={controlador.modoEditor === "add-edge" ? "primary" : "outline"}
                 size="sm"
-                onClick={() => controller.setEditorMode("add-edge")}
+                onClick={() => controlador.fijarModoEditor("add-edge")}
               >
                 <Share2 size={14} />
                 Conexión
               </Button>
               <Button
-                variant={controller.mode === "delete" ? "primary" : "outline"}
+                variant={controlador.modoEditor === "delete" ? "primary" : "outline"}
                 size="sm"
-                onClick={() => controller.setEditorMode("delete")}
+                onClick={() => controlador.fijarModoEditor("delete")}
               >
                 <Trash2 size={14} />
                 Eliminar
@@ -84,36 +84,36 @@ export function SimulatorPage() {
             </div>
 
             <div className="canvas-actions">
-              <Button variant="outline" onClick={controller.loadBaseCase}>
+              <Button variant="outline" onClick={controlador.cargarCasoBase}>
                 <Wand2 size={14} />
                 Cargar caso base
               </Button>
-              <Button variant="outline" onClick={controller.clearAll}>
+              <Button variant="outline" onClick={controlador.limpiarTodo}>
                 <RotateCcw size={14} />
                 Limpiar lienzo
               </Button>
             </div>
 
             <GraphCanvas
-              graph={controller.graph}
-              activeRoute={controller.activeRoute}
-              nodePositions={controller.positions}
-              nodeLabels={controller.labels}
-              selectedNodeId={controller.selectedNodeId}
-              pendingEdgeFromId={controller.pendingEdgeFromId}
-              mode={controller.mode}
-              onCanvasClick={controller.handleCanvasClick}
-              onNodeClick={controller.handleNodeClick}
-              onEdgeClick={controller.handleEdgeClick}
+              graph={controlador.grafo}
+              activeRoute={controlador.rutaActiva}
+              nodePositions={controlador.posiciones}
+              nodeLabels={controlador.etiquetas}
+              selectedNodeId={controlador.idNodoSeleccionado}
+              pendingEdgeFromId={controlador.idNodoOrigenPendiente}
+              mode={controlador.modoEditor}
+              onCanvasClick={controlador.manejarClicEnLienzo}
+              onNodeClick={controlador.manejarClicEnNodo}
+              onEdgeClick={controlador.manejarClicEnArista}
               onNodePointerDown={(nodeId) => {
-                if (controller.mode === "select") controller.setDraggingNodeId(nodeId);
+                if (controlador.modoEditor === "select") controlador.setIdNodoArrastrando(nodeId);
               }}
               onPointerMove={(x, y) => {
-                if (controller.draggingNodeId === null || controller.mode !== "select") return;
-                controller.setPositions((prev) => ({ ...prev, [controller.draggingNodeId!]: { x, y } }));
+                if (controlador.idNodoArrastrando === null || controlador.modoEditor !== "select") return;
+                controlador.setPosiciones((prev) => ({ ...prev, [controlador.idNodoArrastrando!]: { x, y } }));
               }}
               onPointerUp={() => {
-                if (controller.draggingNodeId !== null) controller.setDraggingNodeId(null);
+                if (controlador.idNodoArrastrando !== null) controlador.setIdNodoArrastrando(null);
               }}
               height={560}
             />
@@ -137,21 +137,21 @@ export function SimulatorPage() {
                   <CardDescription>Personaliza el nombre visible del nodo.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {controller.selectedNodeId === null ? (
+                  {controlador.idNodoSeleccionado === null ? (
                     <p className="muted-note">Selecciona un nodo en modo mover.</p>
                   ) : (
                     <div className="control-stack">
-                      <p className="muted-note">ID: {controller.selectedNodeId}</p>
+                      <p className="muted-note">ID: {controlador.idNodoSeleccionado}</p>
                       <Label.Root htmlFor="node-label" className="field-label">
                         Nombre
                       </Label.Root>
                       <Input
                         id="node-label"
-                        value={controller.labels[controller.selectedNodeId] ?? String(controller.selectedNodeId)}
+                        value={controlador.etiquetas[controlador.idNodoSeleccionado] ?? String(controlador.idNodoSeleccionado)}
                         onChange={(event) =>
-                          controller.setLabels((prev) => ({
+                          controlador.setEtiquetas((prev) => ({
                             ...prev,
-                            [controller.selectedNodeId!]: event.target.value || String(controller.selectedNodeId),
+                            [controlador.idNodoSeleccionado!]: event.target.value || String(controlador.idNodoSeleccionado),
                           }))
                         }
                       />
@@ -171,14 +171,14 @@ export function SimulatorPage() {
                   <Input
                     id="route-input"
                     placeholder="0,2,3,1"
-                    value={controller.routeInput}
-                    onChange={(event) => controller.setRouteInput(event.target.value)}
+                    value={controlador.entradaRuta}
+                    onChange={(event) => controlador.setEntradaRuta(event.target.value)}
                   />
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={controller.applyAutoRoute}
-                    disabled={controller.graph.nodes.length === 0}
+                    onClick={controlador.aplicarRutaAutomatica}
+                    disabled={controlador.grafo.nodes.length === 0}
                   >
                     Usar orden de IDs
                   </Button>
@@ -191,11 +191,11 @@ export function SimulatorPage() {
                     type="number"
                     min={1}
                     max={200}
-                    value={controller.maxIterationsInput}
-                    onChange={(event) => controller.setMaxIterationsInput(event.target.value)}
+                    value={controlador.entradaMaxIteraciones}
+                    onChange={(event) => controlador.setEntradaMaxIteraciones(event.target.value)}
                   />
 
-                  <Button onClick={controller.runAlgorithm}>
+                  <Button onClick={controlador.ejecutarAlgoritmo}>
                     <Play size={14} />
                     Ejecutar
                   </Button>
@@ -210,14 +210,14 @@ export function SimulatorPage() {
         <CardHeader>
           <CardTitle>Árbol del algoritmo</CardTitle>
           <CardDescription>
-            {controller.result
-              ? `Solución: ${routeToString(controller.result.solutionRoute)} con F=${controller.result.solutionCost}`
+            {controlador.resultado
+              ? `Solución: ${rutaATexto(controlador.resultado.solutionRoute)} con F=${controlador.resultado.solutionCost}`
               : "Ejecuta el algoritmo para visualizar el árbol."}
           </CardDescription>
           <div className="source-line">
             <span
               className={`source-chip ${
-                controller.lastRunSource === "example" ? "is-example" : controller.lastRunSource === "custom" ? "is-custom" : ""
+                controlador.fuenteUltimaEjecucion === "example" ? "is-example" : controlador.fuenteUltimaEjecucion === "custom" ? "is-custom" : ""
               }`}
             >
               {runSourceLabel}
@@ -225,7 +225,7 @@ export function SimulatorPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {!controller.result ? (
+          {!controlador.resultado ? (
             <p className="muted-note">Sin resultados aún.</p>
           ) : (
             <Tabs defaultValue="tree">
@@ -236,7 +236,7 @@ export function SimulatorPage() {
               </TabsList>
 
               <TabsContent value="tree">
-                <SearchTreeView result={controller.result} />
+                <SearchTreeView result={controlador.resultado} />
               </TabsContent>
 
               <TabsContent value="iterations">
@@ -252,21 +252,21 @@ export function SimulatorPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {controller.result.iterations.map((iteration) => (
+                      {controlador.resultado.iterations.map((iteration) => (
                         <tr key={iteration.iteration}>
                           <td>
                             <button
                               type="button"
                               className="table-select"
-                              onClick={() => controller.setSelectedIteration(iteration.iteration)}
+                              onClick={() => controlador.setIteracionSeleccionada(iteration.iteration)}
                             >
                               #{iteration.iteration}
                             </button>
                           </td>
-                          <td>{routeToString(iteration.currentRoute)}</td>
+                          <td>{rutaATexto(iteration.currentRoute)}</td>
                           <td>{iteration.currentCost}</td>
                           <td>
-                            {routeToString(iteration.bestNeighbor.route)} ({iteration.bestNeighbor.cost})
+                            {rutaATexto(iteration.bestNeighbor.route)} ({iteration.bestNeighbor.cost})
                           </td>
                           <td>{iteration.moved ? "Sí" : "No"}</td>
                         </tr>
@@ -277,7 +277,7 @@ export function SimulatorPage() {
               </TabsContent>
 
               <TabsContent value="cost">
-                <RouteCostChart values={controller.costSeries} />
+                <RouteCostChart values={controlador.serieCostos} />
               </TabsContent>
             </Tabs>
           )}
@@ -285,15 +285,15 @@ export function SimulatorPage() {
       </Card>
 
       <Dialog
-        open={controller.edgeDialogOpen}
-        onOpenChange={controller.handleEdgeDialogOpenChange}
+        open={controlador.dialogoAristaAbierto}
+        onOpenChange={controlador.manejarCambioDialogoArista}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nueva conexión</DialogTitle>
             <DialogDescription>
-              {controller.pendingEdgeFromId !== null && controller.edgeDialogTarget !== null
-                ? `${controller.pendingEdgeFromId} -> ${controller.edgeDialogTarget}`
+              {controlador.idNodoOrigenPendiente !== null && controlador.objetivoDialogoArista !== null
+                ? `${controlador.idNodoOrigenPendiente} -> ${controlador.objetivoDialogoArista}`
                 : "Define peso y dirección"}
             </DialogDescription>
           </DialogHeader>
@@ -305,24 +305,24 @@ export function SimulatorPage() {
               id="edge-weight-input"
               type="number"
               min={1}
-              value={controller.edgeWeightInput}
-              onChange={(event) => controller.setEdgeWeightInput(event.target.value)}
+              value={controlador.entradaPesoArista}
+              onChange={(event) => controlador.setEntradaPesoArista(event.target.value)}
             />
 
             <label className="toggle-line light">
               <input
                 type="checkbox"
-                checked={controller.edgeBidirectional}
-                onChange={(event) => controller.setEdgeBidirectional(event.target.checked)}
+                checked={controlador.aristaBidireccional}
+                onChange={(event) => controlador.setAristaBidireccional(event.target.checked)}
               />
               Bidireccional
             </label>
 
             <div className="inline-actions">
-              <Button variant="outline" onClick={() => controller.setEdgeDialogOpen(false)}>
+              <Button variant="outline" onClick={() => controlador.setDialogoAristaAbierto(false)}>
                 Cancelar
               </Button>
-              <Button onClick={controller.confirmEdgeCreation}>Guardar conexión</Button>
+              <Button onClick={controlador.confirmarCreacionArista}>Guardar conexión</Button>
             </div>
           </div>
         </DialogContent>
@@ -330,3 +330,5 @@ export function SimulatorPage() {
     </div>
   );
 }
+
+
