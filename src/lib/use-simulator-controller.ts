@@ -80,6 +80,10 @@ export function useControladorSimulador() {
   const [idNodoSeleccionado, setIdNodoSeleccionado] = useState<number | null>(null);
   const [idNodoOrigenPendiente, setIdNodoOrigenPendiente] = useState<number | null>(null);
   const [idNodoArrastrando, setIdNodoArrastrando] = useState<number | null>(null);
+  const [dialogoNodoAbierto, setDialogoNodoAbierto] = useState(false);
+  const [entradaNombreNodo, setEntradaNombreNodo] = useState("");
+  const [posicionNodoPendiente, setPosicionNodoPendiente] = useState<Punto | null>(null);
+  const [modoEtiquetaNodo, setModoEtiquetaNodo] = useState<"numeric" | "city">("numeric");
 
   const [entradaRuta, setEntradaRuta] = useState("");
   const [entradaMaxIteraciones, setEntradaMaxIteraciones] = useState("30");
@@ -111,6 +115,11 @@ export function useControladorSimulador() {
     return valores;
   }, [resultado]);
 
+  const hayNodosNumericos = useMemo(
+    () => grafo.nodes.some((nodo) => etiquetas[nodo] === String(nodo)),
+    [grafo.nodes, etiquetas],
+  );
+
   const fijarModoEditor = (siguienteModo: EditorMode) => {
     setModoEditor(siguienteModo);
     if (siguienteModo !== "add-edge") setIdNodoOrigenPendiente(null);
@@ -119,12 +128,20 @@ export function useControladorSimulador() {
 
   const manejarClicEnLienzo = (x: number, y: number) => {
     if (modoEditor === "add-node") {
+      if (modoEtiquetaNodo === "city") {
+        setPosicionNodoPendiente({ x, y });
+        setEntradaNombreNodo("");
+        setDialogoNodoAbierto(true);
+        return;
+      }
+
       const idNodo = siguienteIdNodo(grafo.nodes);
+      const nuevaRuta = [...grafo.nodes, idNodo];
       setGrafo((previo) => ({ ...previo, nodes: [...previo.nodes, idNodo] }));
       setPosiciones((previo) => ({ ...previo, [idNodo]: { x, y } }));
       setEtiquetas((previo) => ({ ...previo, [idNodo]: String(idNodo) }));
       setFuenteEscenario("custom");
-      if (!entradaRuta) setEntradaRuta(formatearRutaPorDefecto([...grafo.nodes, idNodo]));
+      if (!entradaRuta) setEntradaRuta(formatearRutaPorDefecto(nuevaRuta));
       toast.success(`Nodo ${idNodo} agregado.`);
       return;
     }
@@ -212,6 +229,39 @@ export function useControladorSimulador() {
     setAristaBidireccional(true);
     toast.success("Conexión creada.");
     return true;
+  };
+
+  const confirmarCreacionNodo = () => {
+    if (!posicionNodoPendiente) {
+      setDialogoNodoAbierto(false);
+      return false;
+    }
+
+    const nombre = entradaNombreNodo.trim();
+    if (!nombre) {
+      toast.error("El nombre de la ciudad es obligatorio.");
+      return false;
+    }
+
+    const idNodo = siguienteIdNodo(grafo.nodes);
+    const nuevaRuta = [...grafo.nodes, idNodo];
+    setGrafo((previo) => ({ ...previo, nodes: [...previo.nodes, idNodo] }));
+    setPosiciones((previo) => ({ ...previo, [idNodo]: posicionNodoPendiente }));
+    setEtiquetas((previo) => ({ ...previo, [idNodo]: nombre }));
+    setFuenteEscenario("custom");
+    if (!entradaRuta) setEntradaRuta(formatearRutaPorDefecto(nuevaRuta));
+    setDialogoNodoAbierto(false);
+    setPosicionNodoPendiente(null);
+    toast.success(`Nodo "${nombre}" agregado.`);
+    return true;
+  };
+
+  const manejarCambioDialogoNodo = (abierto: boolean) => {
+    setDialogoNodoAbierto(abierto);
+    if (!abierto) {
+      setPosicionNodoPendiente(null);
+      setEntradaNombreNodo("");
+    }
   };
 
   const manejarCambioDialogoArista = (abierto: boolean) => {
@@ -333,6 +383,13 @@ export function useControladorSimulador() {
     objetivoDialogoArista,
     entradaPesoArista,
     aristaBidireccional,
+    dialogoNodoAbierto,
+    entradaNombreNodo,
+    posicionNodoPendiente,
+    confirmarCreacionNodo,
+    manejarCambioDialogoNodo,
+    modoEtiquetaNodo,
+    setModoEtiquetaNodo,
     rutaActiva,
     vistaPreviaRutaAutomatica,
     serieCostos,
@@ -340,6 +397,7 @@ export function useControladorSimulador() {
     setEntradaMaxIteraciones,
     setIteracionSeleccionada,
     setEntradaPesoArista,
+    setEntradaNombreNodo,
     setAristaBidireccional,
     setEtiquetas,
     setIdNodoArrastrando,
@@ -388,7 +446,11 @@ export function useControladorSimulador() {
     setDraggingNodeId: setIdNodoArrastrando,
     setEdgeDialogOpen: setDialogoAristaAbierto,
     handleEdgeDialogOpenChange: manejarCambioDialogoArista,
+    setCityNameInput: setEntradaNombreNodo,
     setEditorMode: fijarModoEditor,
+    nodeLabelMode: modoEtiquetaNodo,
+    setNodeLabelMode: setModoEtiquetaNodo,
+    hasNumericNodes: hayNodosNumericos,
     handleCanvasClick: manejarClicEnLienzo,
     handleNodeClick: manejarClicEnNodo,
     handleEdgeClick: manejarClicEnArista,
@@ -400,6 +462,11 @@ export function useControladorSimulador() {
     loadBaseCase: cargarCasoBase,
     applyAutoRoute: aplicarRutaAutomatica,
     setPositions: setPosiciones,
+    addNodeDialogOpen: dialogoNodoAbierto,
+    cityNameInput: entradaNombreNodo,
+    pendingNodePosition: posicionNodoPendiente,
+    confirmNodeCreation: confirmarCreacionNodo,
+    handleNodeDialogOpenChange: manejarCambioDialogoNodo,
   };
 }
 

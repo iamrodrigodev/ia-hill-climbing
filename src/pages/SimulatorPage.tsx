@@ -82,47 +82,65 @@ export function SimulatorPage() {
                 Eliminar
               </Button>
             </div>
+              <div className="mode-toolbar mode-toolbar-extra">
+                <label className="field-label" htmlFor="node-label-mode-simulator">
+                  Etiqueta de nodo
+                </label>
+                <select
+                  id="node-label-mode-simulator"
+                  className="ui-input"
+                  value={controlador.nodeLabelMode}
+                  onChange={(event) => controlador.setNodeLabelMode(event.target.value as "numeric" | "city")}
+                  disabled={controlador.modoEditor === "add-node" || controlador.hasNumericNodes}
+                >
+                  <option value="numeric">Número</option>
+                  <option value="city">Ciudad</option>
+                </select>
+              </div>
 
-            <div className="canvas-actions">
-              <Button variant="outline" onClick={controlador.cargarCasoBase}>
-                <Wand2 size={14} />
-                Cargar caso base
-              </Button>
-              <Button variant="outline" onClick={controlador.limpiarTodo}>
-                <RotateCcw size={14} />
-                Limpiar lienzo
-              </Button>
-            </div>
-
-            <GraphCanvas
-              graph={controlador.grafo}
-              activeRoute={controlador.rutaActiva}
-              nodePositions={controlador.posiciones}
-              nodeLabels={controlador.etiquetas}
-              selectedNodeId={controlador.idNodoSeleccionado}
-              pendingEdgeFromId={controlador.idNodoOrigenPendiente}
-              mode={controlador.modoEditor}
-              onCanvasClick={controlador.manejarClicEnLienzo}
-              onNodeClick={controlador.manejarClicEnNodo}
-              onEdgeClick={controlador.manejarClicEnArista}
-              onNodePointerDown={(nodeId) => {
-                if (controlador.modoEditor === "select") controlador.setIdNodoArrastrando(nodeId);
+            <Dialog open={controlador.addNodeDialogOpen} onOpenChange={controlador.handleNodeDialogOpenChange}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nombre de la ciudad</DialogTitle>
+                  <DialogDescription>Ingresa el nombre que se mostrará para el nodo.</DialogDescription>
+                </DialogHeader>
+                <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                controlador.confirmNodeCreation();
               }}
-              onPointerMove={(x, y) => {
-                if (controlador.idNodoArrastrando === null || controlador.modoEditor !== "select") return;
-                controlador.setPosiciones((prev) => ({ ...prev, [controlador.idNodoArrastrando!]: { x, y } }));
-              }}
-              onPointerUp={() => {
-                if (controlador.idNodoArrastrando !== null) controlador.setIdNodoArrastrando(null);
-              }}
-              height={560}
-            />
+              className="control-stack"
+            >
+              <Label.Root htmlFor="city-name-input" className="field-label">
+                Ciudad
+              </Label.Root>
+              <Input
+                id="city-name-input"
+                value={controlador.cityNameInput}
+                onChange={(event) => controlador.setEntradaNombreNodo(event.target.value)}
+              />
+              <div className="inline-actions">
+                <Button variant="outline" type="button" onClick={() => controlador.handleNodeDialogOpenChange(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">Agregar nodo</Button>
+              </div>
+            </form>
+              </DialogContent>
+            </Dialog>
 
             <div className="canvas-help">
               <p className="muted-note">
                 Agrega al menos 2 nodos para ejecutar el algoritmo. Coloca nodos y luego crea conexiones antes de pulsar
                 Ejecutar.
               </p>
+              {controlador.modoEditor === "add-node" ? (
+                <p className="muted-note">
+                  {controlador.nodeLabelMode === "city"
+                    ? "Haz clic en el lienzo para agregar una ciudad y escribe su nombre."
+                    : "Haz clic en el lienzo para agregar un nodo numérico."}
+                </p>
+              ) : null}
             </div>
           </CardContent>
         </Card>

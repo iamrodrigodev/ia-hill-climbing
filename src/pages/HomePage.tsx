@@ -156,7 +156,9 @@ export function HomePage() {
 
   const constructorStatus = !controlador.resultado
     ? controlador.modoEditor === "add-node"
-      ? "Haz clic sobre el lienzo para crear nodos."
+      ? controlador.nodeLabelMode === "city"
+        ? "Haz clic sobre el lienzo para crear un nodo de ciudad."
+        : "Haz clic sobre el lienzo para crear nodos numéricos."
       : controlador.modoEditor === "add-edge"
         ? controlador.idNodoOrigenPendiente === null
           ? "Selecciona nodo origen y luego nodo destino para crear una conexión."
@@ -246,6 +248,21 @@ export function HomePage() {
                 <Button variant="primary" size="sm" onClick={controlador.limpiarTodo}>
                   Limpiar
                 </Button>
+              </div>
+              <div className="mode-toolbar mode-toolbar-extra">
+                <label className="field-label" htmlFor="node-label-mode">
+                  Etiqueta de nodo
+                </label>
+                <select
+                  id="node-label-mode"
+                  className="ui-input"
+                  value={controlador.nodeLabelMode}
+                  onChange={(event) => controlador.setNodeLabelMode(event.target.value as "numeric" | "city")}
+                  disabled={controlador.modoEditor === "add-node" || controlador.hasNumericNodes}
+                >
+                  <option value="numeric">Número</option>
+                  <option value="city">Ciudad</option>
+                </select>
               </div>
             </div>
           ) : (
@@ -627,6 +644,37 @@ export function HomePage() {
               <Button onClick={handleConfirmEdgeCreation}>Guardar conexión</Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={controlador.addNodeDialogOpen} onOpenChange={controlador.handleNodeDialogOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nombre de la ciudad</DialogTitle>
+            <DialogDescription>Ingresa el nombre que se mostrará para el nodo.</DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              controlador.confirmNodeCreation();
+            }}
+            className="control-stack"
+          >
+            <Label.Root htmlFor="city-name-input-home" className="field-label">
+              Ciudad
+            </Label.Root>
+            <Input
+              id="city-name-input-home"
+              value={controlador.cityNameInput}
+              onChange={(event) => controlador.setCityNameInput(event.target.value)}
+            />
+            <div className="inline-actions">
+              <Button variant="outline" type="button" onClick={() => controlador.handleNodeDialogOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">Agregar nodo</Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
