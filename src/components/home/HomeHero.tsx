@@ -10,6 +10,9 @@ export function HomeHero() {
         <code>F={baseCaseExpectedText.startCost}</code>. {homeContent.hero.introSuffix}{" "}
         <code>{baseCaseExpectedText.bestLocalRoute}</code> {homeContent.hero.introEnd}{" "}
         <code>F={baseCaseExpectedText.bestLocalCost}</code>.
-      </p>      <p>{homeContent.hero.tspExplanation}</p>    </section>
+      </p>
+      <p>{homeContent.hero.tspExplanation}</p>
+      <p>{homeContent.hero.algorithmExplanation}</p>
+    </section>
   );
 }
