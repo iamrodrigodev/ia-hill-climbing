@@ -24,7 +24,7 @@ export const DialogContent = React.forwardRef<
     <DialogOverlay />
     <DialogPrimitive.Content ref={ref} className={cn("dialog-content", className)} {...props}>
       {children}
-      <DialogPrimitive.Close className="dialog-close" aria-label="Cerrar dialogo">
+      <DialogPrimitive.Close className="dialog-close" aria-label="Cerrar diálogo">
         <X size={16} />
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

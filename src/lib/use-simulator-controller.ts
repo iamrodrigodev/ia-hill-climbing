@@ -124,7 +124,7 @@ export function useSimulatorController() {
       ...prev,
       edges: prev.edges.filter((edge) => edge.id !== edgeId),
     }));
-    toast.success("Conexion eliminada.");
+    toast.success("Conexión eliminada.");
   };
 
   const confirmEdgeCreation = () => {
@@ -135,7 +135,7 @@ export function useSimulatorController() {
 
     const weight = Math.max(1, Math.floor(Number(edgeWeightInput)));
     if (!Number.isFinite(weight)) {
-      toast.error("El peso debe ser numerico.");
+      toast.error("El peso debe ser numérico.");
       return;
     }
 
@@ -146,7 +146,7 @@ export function useSimulatorController() {
     setEdgeDialogTarget(null);
     setEdgeWeightInput("100");
     setEdgeBidirectional(true);
-    toast.success("Conexion creada.");
+    toast.success("Conexión creada.");
   };
 
   const handleEdgeDialogOpenChange = (open: boolean) => {
@@ -165,14 +165,14 @@ export function useSimulatorController() {
 
     const route = parseRoute(routeInput);
     if (!isRouteValid(route, graph.nodes)) {
-      toast.error("Ruta invalida. Debe incluir exactamente todos los nodos del grafo.");
+      toast.error("Ruta inválida. Debe incluir exactamente todos los nodos del grafo.");
       return;
     }
 
     for (let i = 0; i < route.length - 1; i += 1) {
       const cost = getEdgeCost(graph, route[i], route[i + 1]);
       if (!Number.isFinite(cost)) {
-        toast.error(`No existe conexion entre ${route[i]} y ${route[i + 1]}.`);
+        toast.error(`No existe conexión entre ${route[i]} y ${route[i + 1]}.`);
         return;
       }
     }

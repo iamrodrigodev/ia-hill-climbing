@@ -19,15 +19,15 @@ export function SimulatorPage() {
       ? "Resultado del ejemplo de clase"
       : controller.lastRunSource === "custom"
         ? "Resultado generado por ti"
-        : "Sin ejecucion";
+        : "Sin ejecución";
 
   return (
     <div className="container page-stack">
       <section className="hero-lite">
         <h1>Constructor visual de grafos</h1>
         <p>
-          El lienzo inicia vacio. Crea nodos con clic, conecta nodos desde el canvas y luego ejecuta Hill Climbing para
-          obtener el arbol de exploracion.
+          El lienzo inicia vacío. Crea nodos con clic, conecta nodos desde el canvas y luego ejecuta Hill Climbing para
+          obtener el árbol de exploración.
         </p>
       </section>
 
@@ -71,7 +71,7 @@ export function SimulatorPage() {
                 onClick={() => controller.setEditorMode("add-edge")}
               >
                 <Share2 size={14} />
-                Conexion
+                Conexión
               </Button>
               <Button
                 variant={controller.mode === "delete" ? "primary" : "outline"}
@@ -162,7 +162,7 @@ export function SimulatorPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Parametros del algoritmo</CardTitle>
+                  <CardTitle>Parámetros del algoritmo</CardTitle>
                 </CardHeader>
                 <CardContent className="control-stack">
                   <Label.Root htmlFor="route-input" className="field-label">
@@ -184,7 +184,7 @@ export function SimulatorPage() {
                   </Button>
 
                   <Label.Root htmlFor="max-iterations" className="field-label">
-                    Max iteraciones
+                    Máx. iteraciones
                   </Label.Root>
                   <Input
                     id="max-iterations"
@@ -208,11 +208,11 @@ export function SimulatorPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Arbol del algoritmo</CardTitle>
+          <CardTitle>Árbol del algoritmo</CardTitle>
           <CardDescription>
             {controller.result
-              ? `Solucion: ${routeToString(controller.result.solutionRoute)} con F=${controller.result.solutionCost}`
-              : "Ejecuta el algoritmo para visualizar el arbol."}
+              ? `Solución: ${routeToString(controller.result.solutionRoute)} con F=${controller.result.solutionCost}`
+              : "Ejecuta el algoritmo para visualizar el árbol."}
           </CardDescription>
           <div className="source-line">
             <span
@@ -226,11 +226,11 @@ export function SimulatorPage() {
         </CardHeader>
         <CardContent>
           {!controller.result ? (
-            <p className="muted-note">Sin resultados aun.</p>
+            <p className="muted-note">Sin resultados aún.</p>
           ) : (
             <Tabs defaultValue="tree">
               <TabsList>
-                <TabsTrigger value="tree">Arbol</TabsTrigger>
+                <TabsTrigger value="tree">Árbol</TabsTrigger>
                 <TabsTrigger value="iterations">Iteraciones</TabsTrigger>
                 <TabsTrigger value="cost">Costo</TabsTrigger>
               </TabsList>
@@ -244,7 +244,7 @@ export function SimulatorPage() {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Iteracion</th>
+                        <th>Iteración</th>
                         <th>Actual</th>
                         <th>Costo</th>
                         <th>Mejor vecino</th>
@@ -268,7 +268,7 @@ export function SimulatorPage() {
                           <td>
                             {routeToString(iteration.bestNeighbor.route)} ({iteration.bestNeighbor.cost})
                           </td>
-                          <td>{iteration.moved ? "Si" : "No"}</td>
+                          <td>{iteration.moved ? "Sí" : "No"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -290,11 +290,11 @@ export function SimulatorPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nueva conexion</DialogTitle>
+            <DialogTitle>Nueva conexión</DialogTitle>
             <DialogDescription>
               {controller.pendingEdgeFromId !== null && controller.edgeDialogTarget !== null
                 ? `${controller.pendingEdgeFromId} -> ${controller.edgeDialogTarget}`
-                : "Define peso y direccion"}
+                : "Define peso y dirección"}
             </DialogDescription>
           </DialogHeader>
           <div className="control-stack">
@@ -322,7 +322,7 @@ export function SimulatorPage() {
               <Button variant="outline" onClick={() => controller.setEdgeDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={controller.confirmEdgeCreation}>Guardar conexion</Button>
+              <Button onClick={controller.confirmEdgeCreation}>Guardar conexión</Button>
             </div>
           </div>
         </DialogContent>

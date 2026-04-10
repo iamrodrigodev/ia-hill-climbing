@@ -1,9 +1,9 @@
 export const homeContent = {
   hero: {
     title: "Caso base del problema TSP",
-    introPrefix: "Solucion inicial",
+    introPrefix: "Solución inicial",
     introMiddle: "con",
-    introSuffix: "Hill Climbing evalua vecinos y termina en",
+    introSuffix: "Hill Climbing evalúa vecinos y termina en",
     introEnd: "con",
   },
   graphCard: {
@@ -15,17 +15,17 @@ export const homeContent = {
     title: "Tabla de costos",
     description: "Datos exactos del problema.",
     headers: {
-      connection: "Conexion",
+      connection: "Conexión",
       cost: "Costo",
     },
   },
   processCard: {
     title: "Proceso paso a paso",
-    description: "Vecinos por iteracion, seleccion y criterio de paro.",
+    description: "Vecinos por iteración, selección y criterio de paro.",
     tabs: {
       steps: "Pasos",
       iterations: "Iteraciones",
-      tree: "Arbol",
+      tree: "Árbol",
     },
   },
   stepBlocks: {
@@ -35,7 +35,7 @@ export const homeContent = {
     },
     two: {
       title: "2. Vecinos",
-      text: "En cada iteracion se generan swaps y se toma el vecino de menor costo.",
+      text: "En cada iteración se generan swaps y se toma el vecino de menor costo.",
     },
     three: {
       title: "3. Paro",

@@ -42,7 +42,7 @@ export function SearchTreeView({
       )}
 
       <div className={treeShellClass}>
-        <svg viewBox={`0 0 ${layout.width} ${layout.height}`} role="img" aria-label="Arbol de exploracion hill climbing">
+        <svg viewBox={`0 0 ${layout.width} ${layout.height}`} role="img" aria-label="Árbol de exploración hill climbing">
           <rect x="0" y="0" width={layout.width} height={layout.height} className="tree-bg" />
 
           <g>
