@@ -1,12 +1,14 @@
 export const homeContent = {
   hero: {
-    title: "Caso base guiado del problema TSP",
+    title: "Ejemplo guiado del caso base",
     introPrefix: "Solución inicial",
     introMiddle: "con",
     introSuffix: "Hill Climbing evalúa vecinos generados por swaps y termina en",
     introEnd: "con",
     tspExplanation:
-      "Este es un ejemplo del Problema del Viajante de Comercio (TSP): visitar cada nodo una vez y regresar al punto de partida con el menor costo total.",
+      "Este ejemplo muestra el Problema del Viajante de Comercio (TSP): visitar cada nodo exactamente una vez y volver al inicio con el menor costo posible.",
+    algorithmExplanation:
+      "El algoritmo Hill Climbing es una búsqueda local: parte de una ruta inicial y prueba intercambiar pares de nodos para reducir el costo total. Si encuentra un vecino mejor, lo adopta; si no, se detiene en un óptimo local.",
   },
   graphCard: {
     title: "Grafo del enunciado",
