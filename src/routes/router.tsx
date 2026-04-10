@@ -1,7 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import { MainLayout } from "@/layouts/MainLayout";
 import { HomePage } from "@/pages/HomePage";
-import { SimulatorPage } from "@/pages/SimulatorPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export const router = createBrowserRouter([
@@ -15,15 +14,15 @@ export const router = createBrowserRouter([
       },
       {
         path: "constructor",
-        element: <SimulatorPage />,
+        element: <HomePage />,
       },
       {
         path: "herramienta",
-        element: <SimulatorPage />,
+        element: <HomePage />,
       },
       {
         path: "simulador",
-        element: <SimulatorPage />,
+        element: <HomePage />,
       },
       {
         path: "*",

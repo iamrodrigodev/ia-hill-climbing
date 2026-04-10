@@ -133,8 +133,11 @@ code {
 
 .nav-link.is-active,
 .mobile-nav-link.is-active {
-  background: #000000;
+  background: #111111;
   color: #ffffff;
+  opacity: 0.55;
+  pointer-events: none;
+  cursor: not-allowed;
 }
 
 .mobile-toggle {
@@ -329,6 +332,13 @@ code {
 .field-label {
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+.field-error {
+  margin: -0.15rem 0 0;
+  font-size: 0.76rem;
+  color: #b42318;
+  line-height: 1.3;
 }
 
 .ui-input,

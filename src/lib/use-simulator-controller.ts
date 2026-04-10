@@ -18,10 +18,60 @@ import {
   upsertEdge,
   type Point,
 } from "@/lib/simulator-helpers";
-import type { HillClimbResult, WeightedGraph } from "@/lib/types";
+import type { HillClimbResult, Route, WeightedGraph } from "@/lib/types";
 import type { EditorMode } from "@/components/graph/GraphCanvas";
 
 export type ScenarioSource = "example" | "custom";
+const INTERNAL_MAX_ITERATIONS = 1000;
+
+function isValidRoutePath(route: Route, graph: WeightedGraph): boolean {
+  for (let i = 0; i < route.length - 1; i += 1) {
+    const cost = getEdgeCost(graph, route[i], route[i + 1]);
+    if (!Number.isFinite(cost)) return false;
+  }
+  return true;
+}
+
+function findValidAutoRoute(graph: WeightedGraph): Route | null {
+  if (graph.nodes.length === 0) return null;
+  if (graph.nodes.length === 1) return [...graph.nodes];
+
+  const ordered = [...graph.nodes].sort((a, b) => a - b);
+  if (isValidRoutePath(ordered, graph)) return ordered;
+
+  const limitForBacktracking = 9;
+  if (ordered.length > limitForBacktracking) return null;
+
+  const n = ordered.length;
+  const used = new Set<number>();
+  const path: number[] = [];
+
+  const dfs = (current: number): boolean => {
+    path.push(current);
+    used.add(current);
+
+    if (path.length === n) return true;
+
+    for (const next of ordered) {
+      if (used.has(next)) continue;
+      const cost = getEdgeCost(graph, current, next);
+      if (!Number.isFinite(cost)) continue;
+      if (dfs(next)) return true;
+    }
+
+    used.delete(current);
+    path.pop();
+    return false;
+  };
+
+  for (const start of ordered) {
+    path.length = 0;
+    used.clear();
+    if (dfs(start)) return [...path];
+  }
+
+  return null;
+}
 
 export function useSimulatorController() {
   const [graph, setGraph] = useState<WeightedGraph>({ nodes: [], edges: [] });
@@ -46,6 +96,10 @@ export function useSimulatorController() {
 
   const activeIteration = result?.iterations.find((iteration) => iteration.iteration === selectedIteration) ?? null;
   const activeRoute = activeIteration?.currentRoute ?? result?.solutionRoute;
+  const autoRoutePreview = useMemo(() => {
+    const route = findValidAutoRoute(graph);
+    return route ? formatDefaultRoute(route) : "";
+  }, [graph]);
 
   const costSeries = useMemo(() => {
     if (!result) return [];
@@ -130,14 +184,21 @@ export function useSimulatorController() {
   const confirmEdgeCreation = () => {
     if (pendingEdgeFromId === null || edgeDialogTarget === null) {
       setEdgeDialogOpen(false);
-      return;
+      return false;
     }
 
-    const weight = Math.max(1, Math.floor(Number(edgeWeightInput)));
-    if (!Number.isFinite(weight)) {
-      toast.error("El peso debe ser numérico.");
-      return;
+    const normalizedWeight = edgeWeightInput.trim();
+    if (!normalizedWeight) {
+      toast.error("El peso es obligatorio.");
+      return false;
     }
+
+    const parsedWeight = Number(normalizedWeight);
+    if (!Number.isFinite(parsedWeight) || parsedWeight <= 0) {
+      toast.error("El peso debe ser un número mayor que 0.");
+      return false;
+    }
+    const weight = Math.floor(parsedWeight);
 
     setGraph((prev) => upsertEdge(prev, pendingEdgeFromId, edgeDialogTarget, weight, edgeBidirectional));
     setGraphSource("custom");
@@ -147,6 +208,7 @@ export function useSimulatorController() {
     setEdgeWeightInput("100");
     setEdgeBidirectional(true);
     toast.success("Conexión creada.");
+    return true;
   };
 
   const handleEdgeDialogOpenChange = (open: boolean) => {
@@ -157,13 +219,14 @@ export function useSimulatorController() {
     }
   };
 
-  const runAlgorithm = () => {
+  const runAlgorithmWithRoute = (routeText?: string) => {
     if (graph.nodes.length < 2) {
       toast.error("Agrega al menos 2 nodos para ejecutar el algoritmo.");
       return;
     }
 
-    const route = parseRoute(routeInput);
+    const sourceRouteText = routeText ?? routeInput;
+    const route = parseRoute(sourceRouteText);
     if (!isRouteValid(route, graph.nodes)) {
       toast.error("Ruta inválida. Debe incluir exactamente todos los nodos del grafo.");
       return;
@@ -184,10 +247,35 @@ export function useSimulatorController() {
     toast.success(`Resultado: ${routeToString(next.solutionRoute)} con F=${next.solutionCost}.`);
   };
 
+  const runAlgorithm = () => {
+    runAlgorithmWithRoute();
+  };
+
+  const runAlgorithmAuto = () => {
+    if (graph.nodes.length < 2) {
+      toast.error("Agrega al menos 2 nodos para ejecutar el algoritmo.");
+      return;
+    }
+
+    const route = findValidAutoRoute(graph);
+    if (!route || !isRouteValid(route, graph.nodes)) {
+      toast.error("No se pudo generar una ruta válida con las conexiones actuales del grafo.");
+      return;
+    }
+
+    setRouteInput(formatDefaultRoute(route));
+    const next = hillClimb(graph, route, INTERNAL_MAX_ITERATIONS);
+    setResult(next);
+    setLastRunSource(graphSource);
+    setSelectedIteration(1);
+    toast.success(`Resultado: ${routeToString(next.solutionRoute)} con F=${next.solutionCost}.`);
+  };
+
   const clearAll = () => {
     setGraph({ nodes: [], edges: [] });
     setPositions({});
     setLabels({});
+    setMode("select");
     setSelectedNodeId(null);
     setPendingEdgeFromId(null);
     setRouteInput("");
@@ -242,6 +330,7 @@ export function useSimulatorController() {
     edgeWeightInput,
     edgeBidirectional,
     activeRoute,
+    autoRoutePreview,
     costSeries,
     setRouteInput,
     setMaxIterationsInput,
@@ -258,6 +347,8 @@ export function useSimulatorController() {
     handleEdgeClick,
     confirmEdgeCreation,
     runAlgorithm,
+    runAlgorithmWithRoute,
+    runAlgorithmAuto,
     clearAll,
     loadBaseCase,
     applyAutoRoute,
