@@ -249,21 +249,6 @@ export function HomePage() {
                   Limpiar
                 </Button>
               </div>
-              <div className="mode-toolbar mode-toolbar-extra">
-                <label className="field-label" htmlFor="node-label-mode">
-                  Etiqueta de nodo
-                </label>
-                <select
-                  id="node-label-mode"
-                  className="ui-input"
-                  value={controlador.modoEtiquetaNodo}
-                  onChange={(event) => controlador.setModoEtiquetaNodo(event.target.value as "numeric" | "city")}
-                  disabled={controlador.modoEditor === "add-node" || controlador.hayNodosNumericos}
-                >
-                  <option value="numeric">Número</option>
-                  <option value="city">Ciudad</option>
-                </select>
-              </div>
             </div>
           ) : (
             <div className="case-topbar">
@@ -446,6 +431,19 @@ export function HomePage() {
                 <div className="case-mini-card compact">
                   <h4>Parámetros e inicio</h4>
                   <div className="control-stack">
+                    <Label.Root htmlFor="node-label-mode-inline" className="field-label">
+                      Etiqueta de nodo
+                    </Label.Root>
+                    <select
+                      id="node-label-mode-inline"
+                      className="ui-input"
+                      value={controlador.modoEtiquetaNodo}
+                      onChange={(event) => controlador.setModoEtiquetaNodo(event.target.value as "numeric" | "city")}
+                      disabled={controlador.grafo.nodes.length > 0}
+                    >
+                      <option value="numeric">Número</option>
+                      <option value="city">Ciudad</option>
+                    </select>
                     <Label.Root htmlFor="route-input-inline" className="field-label">
                       Ruta inicial (entrada)
                     </Label.Root>
