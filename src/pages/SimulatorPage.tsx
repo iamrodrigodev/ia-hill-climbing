@@ -91,7 +91,7 @@ export function SimulatorPage() {
                   className="ui-input"
                   value={controlador.modoEtiquetaNodo}
                   onChange={(event) => controlador.setModoEtiquetaNodo(event.target.value as "numeric" | "city")}
-                  disabled={controlador.modoEditor === "add-node" || controlador.hayNodosNumericos}
+                  disabled={controlador.grafo.nodes.length > 0}
                 >
                   <option value="numeric">Número</option>
                   <option value="city">Ciudad</option>
