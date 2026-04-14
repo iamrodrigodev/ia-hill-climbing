@@ -11,6 +11,7 @@ import { SearchTreeView } from "@/components/graph/SearchTreeView";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
