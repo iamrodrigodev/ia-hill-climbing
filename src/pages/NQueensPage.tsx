@@ -14,8 +14,6 @@ export function NQueensPage() {
   const [n, setN] = useState<number>(8);
   const [estadoActual, setEstadoActual] = useState<Ruta>(generarEstadoAleatorio(8));
   const [resultado, setResultado] = useState<ResultadoEscalada | null>(null);
-  
-  // Nuevo estado para controlar la navegación paso a paso
   const [pasoActual, setPasoActual] = useState<number>(0);
 
   const reiniciarTablero = () => {
@@ -27,61 +25,60 @@ export function NQueensPage() {
   const ejecutarAlgoritmo = () => {
     const res = escalarColinaNReinas(estadoActual, 200);
     setResultado(res);
-    setPasoActual(0); // Al ejecutar, iniciamos en el paso 0 para ver el proceso
+    setPasoActual(0);
   };
 
-  // Construimos el historial de pasos para la navegación
-  const historialPasos = resultado ? [
-    {
-      titulo: "Estado inicial",
-      route: resultado.startRoute,
-      cost: resultado.startCost,
-      descripcion: `El tablero se generó con posiciones aleatorias. Hay ${resultado.startCost} ataques cruzados entre las reinas.`
-    },
-    ...resultado.iterations.map(it => {
-      let desc = it.moved
-        ? `Se evaluaron los vecinos y se movió una reina. El costo (ataques) se redujo de ${it.currentCost} a ${it.bestNeighbor.cost}.`
-        : `Ningún movimiento mejora el costo actual (${it.currentCost}). El algoritmo ha llegado a un óptimo local y se detiene.`;
-      
-      // Mensaje especial si llegó a 0
-      if (it.moved && it.bestNeighbor.cost === 0) {
-        desc = `¡Solución encontrada! Se movió la última reina conflictiva y el costo bajó a 0. Todas están a salvo.`;
-      }
+  const historialPasos = resultado
+    ? [
+        {
+          titulo: "Estado inicial",
+          route: resultado.startRoute,
+          cost: resultado.startCost,
+          descripcion: `El tablero se generó con posiciones aleatorias. Hay ${resultado.startCost} ataques cruzados entre las reinas.`,
+        },
+        ...resultado.iterations.map((it) => {
+          let desc = it.moved
+            ? `Se evaluaron los vecinos y se movió una reina. El costo (ataques) se redujo de ${it.currentCost} a ${it.bestNeighbor.cost}.`
+            : `Ningún movimiento mejora el costo actual (${it.currentCost}). El algoritmo ha llegado a un óptimo local y se detiene.`;
 
-      return {
-        titulo: `Iteración ${it.iteration}`,
-        route: it.moved ? it.bestNeighbor.route : it.currentRoute,
-        cost: it.moved ? it.bestNeighbor.cost : it.currentCost,
-        descripcion: desc
-      };
-    })
-  ] : [];
+          if (it.moved && it.bestNeighbor.cost === 0) {
+            desc = "Solución encontrada: el costo bajó a 0 y todas las reinas quedaron a salvo.";
+          }
 
-  // Determinamos qué estado mostrar en el tablero
+          return {
+            titulo: `Iteración ${it.iteration}`,
+            route: it.moved ? it.bestNeighbor.route : it.currentRoute,
+            cost: it.moved ? it.bestNeighbor.cost : it.currentCost,
+            descripcion: desc,
+          };
+        }),
+      ]
+    : [];
+
   const pasoSeleccionado = historialPasos.length > 0 ? historialPasos[pasoActual] : null;
   const estadoVisual = pasoSeleccionado ? pasoSeleccionado.route : estadoActual;
   const costoVisual = pasoSeleccionado ? pasoSeleccionado.cost : calcularAtaques(estadoActual);
 
-  const serieCostos = resultado 
-    ? [resultado.startCost, ...resultado.iterations.map(i => i.currentCost)]
+  const serieCostos = resultado
+    ? [resultado.startCost, ...resultado.iterations.map((it) => (it.moved ? it.bestNeighbor.cost : it.currentCost))]
     : [];
 
   const renderizarTablero = () => {
     return (
-      <div 
-        style={{ 
-          display: "grid", 
+      <div
+        style={{
+          display: "grid",
           gridTemplateColumns: `repeat(${n}, 40px)`,
           border: "2px solid #333",
           width: "fit-content",
           margin: "0 auto",
-          background: "#333"
+          background: "#333",
         }}
       >
         {Array.from({ length: n }).map((_, fila) =>
           Array.from({ length: n }).map((_, col) => {
             const esCasillaOscura = (fila + col) % 2 === 1;
-            const tieneReina = estadoVisual[col] === fila; // Usamos el estadoVisual interactivo
+            const tieneReina = estadoVisual[col] === fila;
             return (
               <div
                 key={`${fila}-${col}`}
@@ -93,13 +90,13 @@ export function NQueensPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: "24px",
-                  color: "#000"
+                  color: "#000",
                 }}
               >
-                {tieneReina ? "♛" : ""}
+                {tieneReina ? "\u265B" : ""}
               </div>
             );
-          })
+          }),
         )}
       </div>
     );
@@ -115,7 +112,9 @@ export function NQueensPage() {
       <section className="builder-layout">
         <Card className="canvas-card">
           <CardHeader>
-            <CardTitle>Tablero ({n}x{n})</CardTitle>
+            <CardTitle>
+              Tablero ({n}x{n})
+            </CardTitle>
             <CardDescription>
               Costo actual (ataques): <strong>{costoVisual}</strong>
             </CardDescription>
@@ -134,7 +133,9 @@ export function NQueensPage() {
                   <CardTitle>Parámetros</CardTitle>
                 </CardHeader>
                 <CardContent className="control-stack">
-                  <Label.Root htmlFor="n-input" className="field-label">Número de Reinas (N)</Label.Root>
+                  <Label.Root htmlFor="n-input" className="field-label">
+                    Número de Reinas (N)
+                  </Label.Root>
                   <Input
                     id="n-input"
                     type="number"
@@ -142,9 +143,10 @@ export function NQueensPage() {
                     max={20}
                     value={n}
                     onChange={(e) => {
-                      const val = Math.max(4, Number(e.target.value));
-                      setN(val);
-                      setEstadoActual(generarEstadoAleatorio(val));
+                      const valor = Number(e.target.value);
+                      const limitado = Number.isFinite(valor) ? Math.min(20, Math.max(4, Math.floor(valor))) : 4;
+                      setN(limitado);
+                      setEstadoActual(generarEstadoAleatorio(limitado));
                       setResultado(null);
                       setPasoActual(0);
                     }}
@@ -161,7 +163,6 @@ export function NQueensPage() {
                 </CardContent>
               </Card>
 
-              {/* Tarjeta de Navegación Paso a Paso */}
               <Card style={{ marginTop: "1.5rem" }}>
                 <CardHeader style={{ paddingBottom: "0.75rem" }}>
                   {!resultado ? (
@@ -170,7 +171,15 @@ export function NQueensPage() {
                       <CardDescription>Esperando ejecución...</CardDescription>
                     </>
                   ) : (
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        flexWrap: "wrap",
+                        gap: "10px",
+                      }}
+                    >
                       <div>
                         <CardTitle style={{ fontSize: "1rem" }}>{pasoSeleccionado?.titulo}</CardTitle>
                         <CardDescription>
@@ -178,19 +187,19 @@ export function NQueensPage() {
                         </CardDescription>
                       </div>
                       <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
-                          disabled={pasoActual === 0} 
-                          onClick={() => setPasoActual(p => p - 1)}
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={pasoActual === 0}
+                          onClick={() => setPasoActual((p) => p - 1)}
                         >
                           <ChevronLeft size={16} />
                         </Button>
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
-                          disabled={pasoActual === historialPasos.length - 1} 
-                          onClick={() => setPasoActual(p => p + 1)}
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={pasoActual === historialPasos.length - 1}
+                          onClick={() => setPasoActual((p) => p + 1)}
                         >
                           <ChevronRight size={16} />
                         </Button>
@@ -200,24 +209,33 @@ export function NQueensPage() {
                 </CardHeader>
                 <CardContent>
                   {!resultado ? (
-                    <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", margin: 0, lineHeight: "1.5" }}>
-                      Presiona <strong>Ejecutar</strong> para iniciar el algoritmo. Podrás navegar iteración por iteración para ver las decisiones que toma.
+                    <p
+                      style={{
+                        fontSize: "0.85rem",
+                        color: "hsl(var(--muted-foreground))",
+                        margin: 0,
+                        lineHeight: "1.5",
+                      }}
+                    >
+                      Presiona <strong>Ejecutar</strong> para iniciar el algoritmo. Podrás navegar iteración por
+                      iteración para ver las decisiones que toma.
                     </p>
                   ) : (
-                    <div style={{ 
-                      fontSize: "0.85rem", 
-                      lineHeight: "1.5", 
-                      color: "hsl(var(--muted-foreground))",
-                      background: "hsl(var(--muted))",
-                      padding: "0.75rem",
-                      borderRadius: "var(--radius)"
-                    }}>
+                    <div
+                      style={{
+                        fontSize: "0.85rem",
+                        lineHeight: "1.5",
+                        color: "hsl(var(--muted-foreground))",
+                        background: "hsl(var(--muted))",
+                        padding: "0.75rem",
+                        borderRadius: "var(--radius)",
+                      }}
+                    >
                       {pasoSeleccionado?.descripcion}
                     </div>
                   )}
                 </CardContent>
               </Card>
-
             </div>
           </details>
         </aside>
@@ -239,7 +257,7 @@ export function NQueensPage() {
             <Tabs defaultValue="iterations">
               <TabsList>
                 <TabsTrigger value="iterations">Iteraciones</TabsTrigger>
-                <TabsTrigger value="cost">Gráfica de Costo</TabsTrigger>
+                <TabsTrigger value="cost">Gráfica de costo</TabsTrigger>
               </TabsList>
 
               <TabsContent value="iterations">
@@ -255,28 +273,28 @@ export function NQueensPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {resultado.iterations.map((iteration) => (
-                        <tr 
-                          key={iteration.iteration}
-                          style={{ 
-                            backgroundColor: pasoActual === iteration.iteration ? "hsl(var(--muted))" : "transparent" 
+                      {resultado.iterations.map((iteracion) => (
+                        <tr
+                          key={iteracion.iteration}
+                          style={{
+                            backgroundColor: pasoActual === iteracion.iteration ? "hsl(var(--muted))" : "transparent",
                           }}
                         >
                           <td>
                             <button
                               type="button"
                               className="table-select"
-                              onClick={() => setPasoActual(iteration.iteration)}
+                              onClick={() => setPasoActual(iteracion.iteration)}
                             >
-                              #{iteration.iteration}
+                              #{iteracion.iteration}
                             </button>
                           </td>
-                          <td>{rutaATexto(iteration.currentRoute)}</td>
-                          <td>{iteration.currentCost}</td>
+                          <td>{rutaATexto(iteracion.currentRoute)}</td>
+                          <td>{iteracion.currentCost}</td>
                           <td>
-                            {rutaATexto(iteration.bestNeighbor.route)} ({iteration.bestNeighbor.cost})
+                            {rutaATexto(iteracion.bestNeighbor.route)} ({iteracion.bestNeighbor.cost})
                           </td>
-                          <td>{iteration.moved ? "Sí" : "No"}</td>
+                          <td>{iteracion.moved ? "Sí" : "No"}</td>
                         </tr>
                       ))}
                     </tbody>
