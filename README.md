@@ -23,7 +23,7 @@
 ## Curso: Inteligencia Artificial
 
 - Docente: Vicente Enrique Machaca Arceda
-- Semestre: 10 mo semestre
+- Semestre: 9no semestre
 
 ## Integrantes
 
