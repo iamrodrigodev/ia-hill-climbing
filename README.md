@@ -20,11 +20,12 @@
   <h2 style="font-weight:bold;">TAREA 1</h2>
 </div>
 
-## Curso
-
 <div align="center">
   <table>
     <thead>
+      <tr>
+        <th colspan="2">Curso</th>
+      </tr>
       <tr>
         <th>Campo</th>
         <th>Información</th>
@@ -47,11 +48,12 @@
   </table>
 </div>
 
-## Integrantes
-
 <div align="center">
   <table>
     <thead>
+      <tr>
+        <th colspan="2">Integrantes</th>
+      </tr>
       <tr>
         <th>N°</th>
         <th>Integrante</th>
@@ -99,37 +101,26 @@
 
 [React]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
 [react-site]: https://react.dev/
-
 [TypeScript]: https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white
 [ts-site]: https://www.typescriptlang.org/
-
 [Vite]: https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white
 [vite-site]: https://vitejs.dev/
-
 [ReactRouter]: https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=reactrouter&logoColor=white
 [rr-site]: https://reactrouter.com/
-
 [RadixUI]: https://img.shields.io/badge/Radix_UI-111827?style=for-the-badge
 [radix-site]: https://www.radix-ui.com/
-
 [FramerMotion]: https://img.shields.io/badge/Framer_Motion-000000?style=for-the-badge&logo=framer&logoColor=white
 [framer-site]: https://www.framer.com/motion/
-
 [Lucide]: https://img.shields.io/badge/Lucide-111827?style=for-the-badge
 [lucide-site]: https://lucide.dev/
-
 [TailwindMerge]: https://img.shields.io/badge/tailwind--merge-0EA5E9?style=for-the-badge
 [twmerge-site]: https://github.com/dcastil/tailwind-merge
-
 [CVA]: https://img.shields.io/badge/class--variance--authority-111827?style=for-the-badge
 [cva-site]: https://cva.style/docs
-
 [Sonner]: https://img.shields.io/badge/Sonner-111827?style=for-the-badge
 [sonner-site]: https://sonner.emilkowal.ski/
-
 [Git]: https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white
 [git-site]: https://git-scm.com/
-
 [GitHub]: https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white
 [github-site]: https://github.com/
 
@@ -154,6 +145,24 @@
 4. Si el mejor vecino mejora estrictamente (`<`), se mueve a ese vecino.
 5. Si no mejora, se detiene en óptimo local.
 
+Código base (fragmento):
+
+```ts
+const mejorVecino = vecinos.reduce((mejor, candidato) =>
+  candidato.cost < mejor.cost ? candidato : mejor,
+);
+
+const seMovio = mejorVecino.cost < costoActual;
+
+if (!seMovio) {
+  return {
+    solutionRoute: rutaActual,
+    solutionCost: costoActual,
+    stopReason: "local-optimum",
+  };
+}
+```
+
 ### 2) Hill Climbing para N-Reinas
 
 - Qué resuelve: minimiza la cantidad de ataques entre reinas en un tablero de tamaño `N x N`.
@@ -164,6 +173,21 @@
 3. Genera vecinos moviendo una reina dentro de su columna con `generarVecinosNReinas`.
 4. En `escalarColinaNReinas`, elige el vecino con menor número de ataques.
 5. Si hay mejora estricta (`<`), avanza; si no, se detiene en óptimo local.
+
+Código base (fragmento):
+
+```ts
+export function calcularAtaques(estado: number[]): number {
+  let ataques = 0;
+  for (let i = 0; i < estado.length; i += 1) {
+    for (let j = i + 1; j < estado.length; j += 1) {
+      if (estado[i] === estado[j]) ataques += 1;
+      if (Math.abs(estado[i] - estado[j]) === Math.abs(i - j)) ataques += 1;
+    }
+  }
+  return ataques;
+}
+```
 
 ## Ejecución del proyecto
 
