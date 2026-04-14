@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const items = [
   { to: "/", label: "Inicio" },
   { to: "/constructor", label: "Constructor" },
+  { to: "/n-reinas", label: "N-Reinas" },
 ];
 
 export function Navbar() {
