@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { MainLayout } from "@/layouts/MainLayout";
 import { HomePage } from "@/pages/HomePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { NQueensPage } from "@/pages/NQueensPage";
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
       {
         path: "simulador",
         element: <HomePage />,
+      },
+      {
+        path: "n-reinas",
+        element: <NQueensPage />,
       },
       {
         path: "*",
