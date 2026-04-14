@@ -54,10 +54,6 @@
       <tr>
         <th colspan="2">Integrantes</th>
       </tr>
-      <tr>
-        <th>N°</th>
-        <th>Integrante</th>
-      </tr>
     </thead>
     <tbody>
       <tr>
@@ -201,3 +197,4 @@ npm run dev
 - `/`: Inicio y caso base TSP con explicación paso a paso.
 - `/constructor`: Constructor interactivo de grafos y ejecución de Hill Climbing.
 - `/n-reinas`: Evaluación de Hill Climbing en N-Reinas.
+
