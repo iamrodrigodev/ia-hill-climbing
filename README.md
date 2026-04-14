@@ -20,9 +20,8 @@
   <h2 style="font-weight:bold;">TAREA 1</h2>
 </div>
 
-## Curso
+## Curso: Inteligencia Artificial
 
-- Curso: Inteligencia Artificial
 - Docente: Vicente Enrique Machaca Arceda
 - Semestre: 10 mo semestre
 
