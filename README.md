@@ -20,65 +20,19 @@
   <h2 style="font-weight:bold;">TAREA 1</h2>
 </div>
 
-<div align="center">
-  <table>
-    <thead>
-      <tr>
-        <th colspan="2">Curso</th>
-      </tr>
-      <tr>
-        <th>Campo</th>
-        <th>Información</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Curso</td>
-        <td>Inteligencia Artificial</td>
-      </tr>
-      <tr>
-        <td>Docente</td>
-        <td>Vicente Enrique Machaca Arceda</td>
-      </tr>
-      <tr>
-        <td>Semestre</td>
-        <td>10 mo semestre</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+## Curso
 
-<div align="center">
-  <table>
-    <thead>
-      <tr>
-        <th colspan="2">Integrantes</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>1</td>
-        <td>Rodrigo Emerson Infanzon Acosta</td>
-      </tr>
-      <tr>
-        <td>2</td>
-        <td>Carlos Daniel Aguilar Chirinos</td>
-      </tr>
-      <tr>
-        <td>3</td>
-        <td>Diego Alessandro Alvarez Cruz</td>
-      </tr>
-      <tr>
-        <td>4</td>
-        <td>Piero Omar De La Cruz Mancilla</td>
-      </tr>
-      <tr>
-        <td>5</td>
-        <td>Iben Omar Flores Polanco</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+- Curso: Inteligencia Artificial
+- Docente: Vicente Enrique Machaca Arceda
+- Semestre: 10 mo semestre
+
+## Integrantes
+
+1. Rodrigo Emerson Infanzon Acosta
+2. Carlos Daniel Aguilar Chirinos
+3. Diego Alessandro Alvarez Cruz
+4. Piero Omar De La Cruz Mancilla
+5. Iben Omar Flores Polanco
 
 ## Tecnologias utilizadas
 
@@ -197,4 +151,3 @@ npm run dev
 - `/`: Inicio y caso base TSP con explicación paso a paso.
 - `/constructor`: Constructor interactivo de grafos y ejecución de Hill Climbing.
 - `/n-reinas`: Evaluación de Hill Climbing en N-Reinas.
-
