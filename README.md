@@ -138,6 +138,25 @@ export function calcularAtaques(estado: number[]): number {
 }
 ```
 
+### 3) Visualización y evaluación de N-Reinas en la interfaz
+
+- Ruta: `/n-reinas`.
+- Qué muestra: estado inicial, exploración por iteraciones y mejor estado encontrado.
+- Qué se puede configurar:
+1. Tamaño del tablero `N`.
+2. Estado inicial (manual o generado).
+3. Máximo de iteraciones.
+- Resultado esperado:
+1. Si encuentra un estado con `0` ataques, se reporta solución.
+2. Si no hay mejora, se reporta parada por óptimo local.
+3. Si llega al límite, se reporta parada por máximo de iteraciones.
+
+Archivos principales:
+
+- Lógica del problema: `src/lib/n-queens.ts`.
+- Pantalla y controles: `src/pages/NQueensPage.tsx`.
+- Tipos compartidos: `src/lib/types.ts`.
+
 ## Ejecución del proyecto
 
 ```bash
