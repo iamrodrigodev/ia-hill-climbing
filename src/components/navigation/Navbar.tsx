@@ -8,6 +8,8 @@ const items = [
   { to: "/", label: "Inicio" },
   { to: "/constructor", label: "Constructor" },
   { to: "/n-reinas", label: "N-Reinas" },
+  { to: "/bin-packing", label: "Bin Packing" },
+  { to: "/task-scheduling", label: "Scheduling" },
 ];
 
 export function Navbar() {
