@@ -24,9 +24,10 @@ export interface IteracionEscalada {
   iteration: number;
   currentRoute: Ruta;
   currentCost: number;
-  neighbors: CandidatoVecino[];
-  bestNeighbor: CandidatoVecino;
-  moved: boolean;
+  neighbors?: CandidatoVecino[];
+  bestNeighbor?: CandidatoVecino;
+  moved?: boolean;
+  temp?: number;
 }
 
 export interface ResultadoEscalada {
@@ -35,8 +36,22 @@ export interface ResultadoEscalada {
   iterations: IteracionEscalada[];
   solutionRoute: Ruta;
   solutionCost: number;
-  solutionIteration: number;
-  stopReason: "local-optimum" | "max-iterations";
+  solutionIteration?: number;
+  historyBest: number[];
+  historyCurrent: number[];
+  stopReason: string;
+  timeMs?: number;
+}
+
+export interface ExperimentStats {
+  algorithm: string;
+  problem: string;
+  n: number;
+  avgFitness: number;
+  bestFitness: number;
+  stdFitness: number;
+  avgTimeMs: number;
+  t0Used?: number;
 }
 
 export interface PreajusteGrafo {
