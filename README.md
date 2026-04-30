@@ -169,3 +169,48 @@ npm run dev
 - `/`: Inicio y caso base TSP con explicación paso a paso.
 - `/constructor`: Constructor interactivo de grafos y ejecución de Hill Climbing.
 - `/n-reinas`: Evaluación de Hill Climbing en N-Reinas.
+
+## TAREA 2
+
+### Aporte realizado por Carlos Daniel Aguilar Chirinos
+
+Se incorporaron nuevos problemas de optimizacion y modulos de analisis comparativo para fortalecer la evaluacion de los algoritmos de busqueda local.
+
+## Implementacion Tarea 2 (que, como y donde)
+
+### 1) Bin Packing con busqueda local
+
+- Que resuelve: asigna items a contenedores minimizando desperdicio y uso de contenedores.
+- Donde esta: `src/lib/bin-packing.ts` y `src/pages/BinPackingPage.tsx`.
+- Como funciona:
+1. Genera una solucion inicial factible.
+2. Explora vecindarios reubicando/intercambiando items entre contenedores.
+3. Evalua cada vecino con funcion de costo (ocupacion/desperdicio).
+4. Selecciona mejoras iterativas hasta optimo local o limite de iteraciones.
+
+### 2) Task Scheduling con busqueda local
+
+- Que resuelve: ordena tareas para optimizar una metrica objetivo (por ejemplo tardanza/costo total).
+- Donde esta: `src/lib/task-scheduling.ts` y `src/pages/TaskSchedulingPage.tsx`.
+- Como funciona:
+1. Construye una planificacion inicial.
+2. Genera vecinos permutando tareas o moviendo posiciones.
+3. Calcula fitness/costo por cronograma.
+4. Avanza al mejor vecino hasta converger o alcanzar el limite.
+
+### 3) Infraestructura generica y visualizacion comparativa
+
+- Que aporta: estandariza ejecucion de algoritmos y agrega analisis estadistico y visual.
+- Donde esta:
+1. Base generica: `src/lib/algorithms-generic.ts`.
+2. Graficos: `src/components/graph/AdvancedConvergenceChart.tsx`, `src/components/graph/ComparisonChart.tsx`.
+3. Tabla estadistica: `src/components/graph/StatisticsTable.tsx`.
+- Como se hizo:
+1. Se definio una estructura comun de resultados y metricas.
+2. Se conectaron paginas nuevas con componentes de comparacion.
+3. Se integro navegacion desde `src/routes/router.tsx` y `src/components/navigation/Navbar.tsx`.
+
+## Rutas nuevas Tarea 2
+
+- `/bin-packing`: resolucion de Bin Packing con metricas y visualizacion.
+- `/task-scheduling`: resolucion de Task Scheduling con metricas y visualizacion.
