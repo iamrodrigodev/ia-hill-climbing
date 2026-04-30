@@ -29,7 +29,7 @@
 
 1. Rodrigo Emerson Infanzon Acosta
 2. Carlos Daniel Aguilar Chirinos
-3. Diego Alessandro Alvarez Cruz
+3. enyelbert panta huaracha
 4. Piero Omar De La Cruz Mancilla
 5. Iben Omar Flores Polanco
 
