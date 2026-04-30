@@ -3,6 +3,8 @@ import { MainLayout } from "@/layouts/MainLayout";
 import { HomePage } from "@/pages/HomePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { NQueensPage } from "@/pages/NQueensPage";
+import { BinPackingPage } from "@/pages/BinPackingPage";
+import { TaskSchedulingPage } from "@/pages/TaskSchedulingPage";
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +30,14 @@ export const router = createBrowserRouter([
       {
         path: "n-reinas",
         element: <NQueensPage />,
+      },
+      {
+        path: "bin-packing",
+        element: <BinPackingPage />,
+      },
+      {
+        path: "task-scheduling",
+        element: <TaskSchedulingPage />,
       },
       {
         path: "*",

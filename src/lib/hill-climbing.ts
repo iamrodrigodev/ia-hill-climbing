@@ -109,6 +109,8 @@ export function escalarColina(grafo: GrafoPonderado, rutaInicial: Ruta, maxItera
         solutionRoute: rutaActual,
         solutionCost: costoActual,
         solutionIteration: numeroIteracion - 1,
+        historyBest: iteraciones.map(it => it.currentCost),
+        historyCurrent: iteraciones.map(it => it.currentCost),
         stopReason: "local-optimum",
       };
     }
@@ -135,6 +137,8 @@ export function escalarColina(grafo: GrafoPonderado, rutaInicial: Ruta, maxItera
         solutionRoute: rutaActual,
         solutionCost: costoActual,
         solutionIteration: numeroIteracion - 1,
+        historyBest: iteraciones.map(it => it.currentCost),
+        historyCurrent: iteraciones.map(it => it.currentCost),
         stopReason: "local-optimum",
       };
     }
@@ -150,6 +154,8 @@ export function escalarColina(grafo: GrafoPonderado, rutaInicial: Ruta, maxItera
     solutionRoute: rutaActual,
     solutionCost: costoActual,
     solutionIteration: maxIteracionesSeguro,
+    historyBest: iteraciones.map(it => it.currentCost),
+    historyCurrent: iteraciones.map(it => it.currentCost),
     stopReason: "max-iterations",
   };
 }
