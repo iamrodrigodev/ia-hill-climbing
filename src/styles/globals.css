@@ -827,6 +827,155 @@ code {
   stroke: #a8a8a8;
 }
 
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 0.7rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.legend-hc,
+.legend-sa {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.legend-hc {
+  background: #e74c3c;
+}
+
+.legend-sa {
+  background: #2980b9;
+}
+
+.comparison-bars {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.comparison-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 1fr;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.comparison-row > span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.comparison-track {
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f6f6f6;
+  position: relative;
+  overflow: hidden;
+}
+
+.comparison-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  min-width: 2px;
+}
+
+.comparison-track b {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: #111111;
+  font-size: 0.78rem;
+}
+
+.bar-hc {
+  background: rgba(231, 76, 60, 0.62);
+}
+
+.bar-sa {
+  background: rgba(41, 128, 185, 0.62);
+}
+
+.slack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 0.55rem;
+  min-height: 210px;
+  align-items: end;
+  padding-top: 0.65rem;
+}
+
+.slack-item {
+  display: grid;
+  gap: 0.32rem;
+  align-items: end;
+}
+
+.slack-item span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mini-bars {
+  height: 170px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f6f6f6;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.35rem;
+}
+
+.mini-bars i {
+  width: 18px;
+  border-radius: 5px 5px 0 0;
+  min-height: 6px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.65rem;
+}
+
+.metric-compare {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.28rem;
+}
+
+.metric-compare span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.metric-compare strong {
+  color: #111111;
+  font-size: 0.94rem;
+}
+
 .chart-line {
   fill: none;
   stroke: var(--primary-strong);
