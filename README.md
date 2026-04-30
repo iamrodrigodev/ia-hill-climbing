@@ -172,7 +172,6 @@ npm run dev
 
 ## TAREA 2
 
-### Aporte realizado por Carlos Daniel Aguilar Chirinos
 
 Se incorporaron nuevos problemas de optimizacion y modulos de analisis comparativo para fortalecer la evaluacion de los algoritmos de busqueda local.
 
