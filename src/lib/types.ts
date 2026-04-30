@@ -24,8 +24,8 @@ export interface IteracionEscalada {
   iteration: number;
   currentRoute: Ruta;
   currentCost: number;
-  neighbors?: CandidatoVecino[];
-  bestNeighbor?: CandidatoVecino;
+  neighbors: CandidatoVecino[];
+  bestNeighbor: CandidatoVecino;
   moved?: boolean;
   temp?: number;
 }
@@ -37,8 +37,8 @@ export interface ResultadoEscalada {
   solutionRoute: Ruta;
   solutionCost: number;
   solutionIteration?: number;
-  historyBest: number[];
-  historyCurrent: number[];
+  historyBest?: number[];
+  historyCurrent?: number[];
   stopReason: string;
   timeMs?: number;
 }
